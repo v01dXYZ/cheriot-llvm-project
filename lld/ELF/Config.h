@@ -10,6 +10,7 @@
 #define LLD_ELF_CONFIG_H
 
 #include "lld/Common/ErrorHandler.h"
+#include "llvm/ADT/APInt.h"
 #include "llvm/ADT/CachedHashString.h"
 #include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/MapVector.h"
@@ -30,6 +31,8 @@
 #include <atomic>
 #include <memory>
 #include <optional>
+#include <map>
+#include <set>
 #include <vector>
 
 namespace lld::elf {
@@ -127,7 +130,7 @@ public:
 private:
   void createFiles(llvm::opt::InputArgList &args);
   void inferMachineType();
-  void link(llvm::opt::InputArgList &args);
+  template <class ELFT> void link(llvm::opt::InputArgList &args);
   template <class ELFT> void compileBitcodeFiles(bool skipLinkedOutput);
 
   // True if we are in --whole-archive and --no-whole-archive.
@@ -456,6 +459,42 @@ struct Config {
   // If an input file matches a wildcard pattern, remap it to the value.
   llvm::SmallVector<std::pair<llvm::GlobPattern, llvm::StringRef>, 0>
       remapInputsWildcards;
+
+  // List of imported/exported symbols per CHERI compartment
+  struct CompartmentSymbols {
+    struct Import {
+      // If the import has no compartment, show its address
+      llvm::APInt address;
+      // If it does, show its compartment
+      llvm::StringRef compartment;
+      // Symbol name
+      llvm::StringRef name;
+      // For std::set
+      bool operator<(const Import &other) const {
+        return compartment < other.compartment ||
+               address.getZExtValue() < other.address.getZExtValue() ||
+               name < other.name;
+      }
+    };
+    // Name of the compartment and symbol that this compartment imports
+    // If no compartment found, prints the effective address
+    std::set<Import> imports;
+    // Name of the symbols exported by this compartment
+    std::set<llvm::StringRef> exports;
+    // Hash of the compartment's sections/data
+    std::map<llvm::StringRef, std::array<uint8_t, 32>> hashes;
+  };
+
+  // List of CHERI compartment symbols in a given executable
+  std::map<llvm::StringRef, CompartmentSymbols> compartments;
+
+  /// The name of the compartment report file
+  StringRef compartmentReportFile;
+
+  std::array<uint8_t, 32> finalHash;
+
+  /// Should we emit a compartment report file?
+  bool shouldEmitCompartmentReport() { return !compartmentReportFile.empty(); }
 };
 struct ConfigWrapper {
   Config c;

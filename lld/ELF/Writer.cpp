@@ -9,6 +9,7 @@
 #include "Writer.h"
 #include "AArch64ErrataFix.h"
 #include "ARMErrataFix.h"
+#include "Arch/Cheri.h"
 #include "CallGraphSort.h"
 #include "Config.h"
 #include "InputFiles.h"
@@ -20,7 +21,6 @@
 #include "Symbols.h"
 #include "SyntheticSections.h"
 #include "Target.h"
-#include "Arch/Cheri.h"
 #include "lld/Common/Arrays.h"
 #include "lld/Common/CommonLinkerContext.h"
 #include "lld/Common/Filesystem.h"
@@ -29,6 +29,8 @@
 #include "llvm/Support/BLAKE3.h"
 #include "llvm/Support/Parallel.h"
 #include "llvm/Support/RandomNumberGenerator.h"
+#include "llvm/Support/SHA1.h"
+#include "llvm/Support/SHA256.h"
 #include "llvm/Support/TimeProfiler.h"
 #include "llvm/Support/xxhash.h"
 #include <climits>
@@ -626,6 +628,11 @@ template <class ELFT> void Writer<ELFT>::run() {
     writeBuildId();
     if (errorCount())
       return;
+
+    if (config->shouldEmitCompartmentReport()) {
+      config->finalHash =
+          SHA256::hash({buffer->getBufferStart(), buffer->getBufferSize()});
+    }
 
     if (auto e = buffer->commit())
       fatal("failed to write output '" + buffer->getPath() +
