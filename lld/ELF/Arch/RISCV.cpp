@@ -378,6 +378,8 @@ RelExpr RISCV::getRelExpr(const RelType type, const Symbol &s,
     return R_CHERI_CAPABILITY_TABLE_TLSIE_ENTRY_PC;
   case R_RISCV_CHERI_TLS_GD_CAPTAB_PCREL_HI20:
     return R_CHERI_CAPABILITY_TABLE_TLSGD_ENTRY_PC;
+  case R_RISCV_RELAX:
+    return config->relax ? R_RELAX_HINT : R_NONE;
   default:
     error(getErrorLocation(loc) + "unknown relocation (" + Twine(type) +
           ") against symbol " + toString(s));
