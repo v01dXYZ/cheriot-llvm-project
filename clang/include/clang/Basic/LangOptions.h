@@ -543,6 +543,9 @@ public:
   // received as a result of a standard operator new (-fcheck-new)
   bool CheckNew = false;
 
+  /// The name of the CHERI compartment for this compilation unit.
+  std::string CheriCompartmentName;
+
   LangOptions();
 
   /// Set language defaults for the given input language and

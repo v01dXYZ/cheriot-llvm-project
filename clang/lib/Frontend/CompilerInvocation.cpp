@@ -564,6 +564,9 @@ static bool FixupInvocation(CompilerInvocation &Invocation,
           << A->getSpelling() << T.getTriple();
   }
 
+  if (Arg *A = Args.getLastArg(OPT_cheri_compartment_EQ))
+    LangOpts.CheriCompartmentName = A->getValue();
+
   return Diags.getNumErrors() == NumErrorsBefore;
 }
 
@@ -3529,6 +3532,9 @@ void CompilerInvocation::GenerateLangArgs(const LangOptions &Opts,
 
   if (!Opts.RandstructSeed.empty())
     GenerateArg(Args, OPT_frandomize_layout_seed_EQ, Opts.RandstructSeed, SA);
+
+  if (Opts.CheriCompartmentName != std::string())
+    GenerateArg(Args, OPT_cheri_compartment_EQ, Opts.CheriCompartmentName, SA);
 }
 
 bool CompilerInvocation::ParseLangArgs(LangOptions &Opts, ArgList &Args,

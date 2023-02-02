@@ -71,6 +71,9 @@ private:
   bool expandVSetVL(MachineBasicBlock &MBB, MachineBasicBlock::iterator MBBI);
   bool expandVMSET_VMCLR(MachineBasicBlock &MBB,
                          MachineBasicBlock::iterator MBBI, unsigned Opcode);
+  bool expandCompartmentCall(MachineBasicBlock &MBB,
+                             MachineBasicBlock::iterator MBBI,
+                             MachineBasicBlock::iterator &NextMBBI);
   bool expandRV32ZdinxStore(MachineBasicBlock &MBB,
                             MachineBasicBlock::iterator MBBI);
   bool expandRV32ZdinxLoad(MachineBasicBlock &MBB,
@@ -172,11 +175,60 @@ bool RISCVExpandPseudo::expandMI(MachineBasicBlock &MBB,
   case RISCV::PseudoVMSET_M_B64:
     // vmset.m vd => vmxnor.mm vd, vd, vd
     return expandVMSET_VMCLR(MBB, MBBI, RISCV::VMXNOR_MM);
+  case RISCV::PseudoCompartmentCall:
+    return expandCompartmentCall(MBB, MBBI, NextMBBI);
   }
 
   return false;
 }
 
+bool RISCVExpandPseudo::expandCompartmentCall(MachineBasicBlock &MBB,
+    MachineBasicBlock::iterator MBBI,
+    MachineBasicBlock::iterator &NextMBBI) {
+  // Expand a cross-compartment call into a auipcc + clc to get the compartment
+  // switcher, followed by a compressed cjalr to invoke it.  This is running
+  // post-RA, but the ABI guarantees that C7 is not required to be preserved
+  // here and so we can use it.
+  // FIXME: This copies and pastes a lot of code from expandAuipccInstPair.
+
+  MachineOperand Switcher =
+    MachineOperand::CreateGA(MBB.getParent()->getFunction()
+        .getParent()->getGlobalVariable(".compartment_switcher"), 0);
+  auto *MF = MBB.getParent();
+  MachineInstr &MI = *MBBI;
+  DebugLoc DL = MBBI->getDebugLoc();
+
+  MachineBasicBlock *NewMBB =
+    MBB.getParent()->CreateMachineBasicBlock(MBB.getBasicBlock());
+
+  // Tell AsmPrinter that we unconditionally want the symbol of this label to be
+  // emitted.
+  NewMBB->setLabelMustBeEmitted();
+
+  MF->insert(++MBB.getIterator(), NewMBB);
+
+  BuildMI(NewMBB, DL, TII->get(RISCV::AUIPCC), RISCV::C7)
+      .addDisp(Switcher, 0, RISCVII::MO_CHERI_COMPARTMENT_PCCREL_HI);
+  BuildMI(NewMBB, DL, TII->get(RISCV::CLC_64), RISCV::C7)
+      .addReg(RISCV::C7, RegState::Kill)
+      .addMBB(NewMBB, RISCVII::MO_CHERI_COMPARTMENT_PCCREL_LO);
+  BuildMI(NewMBB, DL, TII->get(RISCV::C_CJALR))
+      .addReg(RISCV::C7, RegState::Kill);
+
+  // Move all the rest of the instructions to NewMBB.
+  NewMBB->splice(NewMBB->end(), &MBB, std::next(MBBI), MBB.end());
+  // Update machine-CFG edges.
+  NewMBB->transferSuccessorsAndUpdatePHIs(&MBB);
+  // Make the original basic block fall-through to the new.
+  MBB.addSuccessor(NewMBB);
+
+  // Make sure live-ins are correctly attached to this new basic block.
+  LivePhysRegs LiveRegs;
+  computeAndAddLiveIns(LiveRegs, *NewMBB);
+  NextMBBI = MBB.end();
+  MI.eraseFromParent();
+  return true;
+}
 
 bool RISCVExpandPseudo::expandAuicgpInstPair(MachineBasicBlock &MBB,
                                              MachineBasicBlock::iterator MBBI,

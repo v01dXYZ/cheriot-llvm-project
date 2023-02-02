@@ -209,7 +209,8 @@ CodeGenTypes::arrangeFreeFunctionType(CanQual<FunctionProtoType> FTP) {
 }
 
 static CallingConv getCallingConventionForDecl(const ObjCMethodDecl *D,
-                                               bool IsWindows) {
+                                               bool IsWindows,
+                                               StringRef CompartmentName) {
   // Set the appropriate calling convention for the Function.
   if (D->hasAttr<StdCallAttr>())
     return CC_X86StdCall;
@@ -231,6 +232,12 @@ static CallingConv getCallingConventionForDecl(const ObjCMethodDecl *D,
 
   if (PcsAttr *PCS = D->getAttr<PcsAttr>())
     return (PCS->getPCS() == PcsAttr::AAPCS ? CC_AAPCS : CC_AAPCS_VFP);
+
+  if (auto Attr = D->getAttr<CHERICompartmentNameAttr>()) {
+    if (Attr->getCompartmentName() == CompartmentName)
+      return CC_CHERICCallee;
+    return CC_CHERICCall;
+  }
 
   if (D->hasAttr<CHERICCallAttr>())
     return CC_CHERICCall;
@@ -513,7 +520,9 @@ CodeGenTypes::arrangeObjCMessageSendSignature(const ObjCMethodDecl *MD,
 
   FunctionType::ExtInfo einfo;
   bool IsWindows = getContext().getTargetInfo().getTriple().isOSWindows();
-  einfo = einfo.withCallingConv(getCallingConventionForDecl(MD, IsWindows));
+  auto &Compartment = getContext().getLangOpts().CheriCompartmentName;
+  einfo = einfo.withCallingConv(
+      getCallingConventionForDecl(MD, IsWindows, Compartment));
 
   if (getContext().getLangOpts().ObjCAutoRefCount &&
       MD->hasAttr<NSReturnsRetainedAttr>())
@@ -4446,7 +4455,8 @@ void CodeGenFunction::EmitCallArgs(
     if (MD) {
       IsVariadic = MD->isVariadic();
       ExplicitCC = getCallingConventionForDecl(
-          MD, CGM.getTarget().getTriple().isOSWindows());
+          MD, CGM.getTarget().getTriple().isOSWindows(),
+          getContext().getLangOpts().CheriCompartmentName);
       ArgTypes.assign(MD->param_type_begin() + ParamsToSkip,
                       MD->param_type_end());
     } else {
@@ -5638,7 +5648,8 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
 
   // Set tail call kind if necessary.
   if (llvm::CallInst *Call = dyn_cast<llvm::CallInst>(CI)) {
-    if (TargetDecl && TargetDecl->hasAttr<NotTailCalledAttr>())
+    if ((TargetDecl && TargetDecl->hasAttr<NotTailCalledAttr>()) ||
+        (CallingConv == llvm::CallingConv::CHERI_CCall))
       Call->setTailCallKind(llvm::CallInst::TCK_NoTail);
     else if (IsMustTail)
       Call->setTailCallKind(llvm::CallInst::TCK_MustTail);

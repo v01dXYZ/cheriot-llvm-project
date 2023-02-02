@@ -6371,6 +6371,8 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
                        options::OPT_fno_openmp_extensions);
   }
 
+  Args.AddLastArg(CmdArgs, options::OPT_cheri_compartment_EQ);
+
   // Forward the new driver to change offloading code generation.
   if (Args.hasFlag(options::OPT_offload_new_driver,
                    options::OPT_no_offload_new_driver, false))

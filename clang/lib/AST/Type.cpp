@@ -3931,6 +3931,7 @@ bool AttributedType::isCallingConv() const {
   case attr::CHERICCall:
   case attr::CHERICCallback:
   case attr::CHERICCallee:
+  case attr::CHERICompartmentName:
   case attr::FastCall:
   case attr::StdCall:
   case attr::ThisCall:

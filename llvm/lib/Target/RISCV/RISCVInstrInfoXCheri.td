@@ -25,6 +25,9 @@ def SDT_RISCVCheriBoolBinary : SDTypeProfile<1, 2, [
 def riscv_cap_call        : SDNode<"RISCVISD::CAP_CALL", SDT_RISCVCapCall,
                                    [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue,
                                     SDNPVariadic]>;
+def riscv_cap_compartment_call : SDNode<"RISCVISD::CAP_COMPARTMENT_CALL", SDT_RISCVCapCall,
+                                   [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue,
+                                    SDNPVariadic]>;
 def riscv_cap_tail        : SDNode<"RISCVISD::CAP_TAIL", SDT_RISCVCapCall,
                                    [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue,
                                     SDNPVariadic]>;
@@ -42,6 +45,10 @@ def riscv_clgc            : SDNode<"RISCVISD::CLGC", SDT_RISCVSymLoad,
 def riscv_cla_tls_ie      : SDNode<"RISCVISD::CLA_TLS_IE", SDT_RISCVSymLoad,
                                    [SDNPHasChain, SDNPMayLoad, SDNPMemOperand]>;
 def riscv_clc_tls_gd      : SDNode<"RISCVISD::CLC_TLS_GD", SDT_RISCVSymLoad>;
+def riscv_cap_bounds_set  : SDNode<"RISCVISD::BOUNDS_SET",
+                                   SDTypeProfile<1, 2, [SDTCisVT<0, CLenVT>,
+                                                 SDTCisVT<1, CLenVT>,
+                                                 SDTCisVT<2, XLenVT>]>>;
 
 //===----------------------------------------------------------------------===//
 // Operand and SDNode transformation definitions.
@@ -1284,6 +1291,8 @@ def : PatGpcrGpr<cptradd, CIncOffset>;
 def : PatGpcrSimm12<cptradd, CIncOffsetImm>;
 def : PatGpcrGpr<int_cheri_cap_bounds_set, CSetBounds>;
 def : PatGpcrGpr<int_cheri_cap_bounds_set_exact, CSetBoundsExact>;
+def : PatGpcrGpr<riscv_cap_bounds_set, CSetBounds>;
+def : PatGpcrUimm12<riscv_cap_bounds_set, CSetBoundsImm>;
 def : PatGpcrUimm12<int_cheri_cap_bounds_set, CSetBoundsImm>;
 def : PatGpcr<int_cheri_cap_tag_clear, CClearTag, CLenVT>;
 def : PatGpcrGpcr<int_cheri_cap_build, CBuildCap>;
@@ -1864,11 +1873,19 @@ def PseudoCCALL : Pseudo<(outs), (ins cap_call_symbol:$func), []> {
   let AsmString = "ccall\t$func";
 }
 
+let Predicates = [HasCheri, IsCapMode],
+    isCall = 1, Defs = [C1], isCodeGenOnly = 1 in
+def PseudoCompartmentCall : Pseudo<(outs), (ins cap_call_symbol:$func), []>;
+
 let Predicates = [HasCheri, IsCapMode, IsPureCapABI] in {
 def : Pat<(riscv_cap_call tglobaladdr:$func),
           (PseudoCCALL tglobaladdr:$func)>;
 def : Pat<(riscv_cap_call texternalsym:$func),
           (PseudoCCALL texternalsym:$func)>;
+def : Pat<(riscv_cap_compartment_call tglobaladdr:$func),
+          (PseudoCompartmentCall tglobaladdr:$func)>;
+def : Pat<(riscv_cap_compartment_call texternalsym:$func),
+          (PseudoCompartmentCall texternalsym:$func)>;
 } // Predicates = [HasCheri, IsCapMode, IsPureCapABI]
 
 let Predicates = [HasCheri, IsCapMode, IsPureCapABI],
@@ -2250,7 +2267,8 @@ def : CompressPat<(CSD GPR:$rs2, CSP:$rs1, uimm9_lsb000:$imm),
 } // Predicates = [HasCheri, HasCheriRVC, HasStdExtC, IsRV64, IsCapMode]
 
 
-let Predicates = [HasCheri, IsRV32, IsCapMode, IsRV32E] in {
+// TODO(sleffler): was IsRV32E but not a defined feature
+let Predicates = [HasCheri, IsRV32, IsCapMode, IsRVE] in {
 let mayLoad = true, mayStore = false, hasSideEffects = false in
 def PseudoCLLW : Pseudo<(outs GPR:$dst), (ins bare_symbol:$src), [],
                         "cllc", "$dst, $src">;

@@ -133,6 +133,8 @@ enum NodeType : unsigned {
   // (returns (Lo, Hi)). It takes a chain operand.
   READ_CYCLE_WIDE,
   CAP_CALL,
+  /// Cross-compartment call.
+  CAP_COMPARTMENT_CALL,
   CAP_TAIL,
   /// Legalised int_cheri_cap_tag_get
   CAP_TAG_GET,
@@ -156,6 +158,8 @@ enum NodeType : unsigned {
   SM4KS, SM4ED,
   SM3P0, SM3P1,
 
+  /// DAG node for CSetBounds
+  BOUNDS_SET,
   // Vector Extension
   // VMV_V_V_VL matches the semantics of vmv.v.v but includes an extra operand
   // for the VL value to be used for the operation. The first operand is

@@ -32,6 +32,7 @@
 ; CHECK-NEXT:       Interleaved Access Pass
 ; CHECK-NEXT:       RISC-V CodeGenPrepare
 ; CHECK-NEXT:    CHERI bound stack allocations
+; CHECK-NEXT:    CHERI pre-codegen ccall expansion
 ; CHECK-NEXT:    FunctionPass Manager
 ; CHECK-NEXT:       Module Verifier
 ; CHECK-NEXT:       Dominator Tree Construction

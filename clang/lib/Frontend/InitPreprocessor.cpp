@@ -604,6 +604,8 @@ static void InitializeStandardPredefinedMacros(const TargetInfo &TI,
       Builder.defineMacro("HIP_API_PER_THREAD_DEFAULT_STREAM");
     }
   }
+  if (LangOpts.CheriCompartmentName != std::string())
+    Builder.defineMacro("__CHERI_COMPARTMENT__", LangOpts.CheriCompartmentName);
 }
 
 /// Initialize the predefined C++ language feature test macros defined in

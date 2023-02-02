@@ -327,6 +327,7 @@ void RISCVPassConfig::addIRPasses() {
   }
 
   addPass(createCheriBoundAllocasPass());
+  addPass(createRISCVCheriExpandCCallPass());
   TargetPassConfig::addIRPasses();
 }
 
