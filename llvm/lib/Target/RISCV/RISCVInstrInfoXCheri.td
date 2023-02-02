@@ -728,6 +728,11 @@ let Predicates = [HasCheri, IsCapMode] in {
 def AUIPCC : RVInstU<OPC_AUIPC, (outs GPCR:$rd), (ins uimm20_auipc:$imm20),
                      "auipcc", "$rd, $imm20">;
 
+let Uses = [C3] in {
+def AUICGP : RVInstU<OPC_AUIGP, (outs GPCR:$rd), (ins uimm20_auigp:$imm20),
+                     "auicgp", "$rd, $imm20">;
+}
+
 let isCall = 1 in
 def CJAL : RVInstJ<OPC_JAL, (outs GPCR:$rd), (ins simm21_lsb0_jal:$imm20),
                    "cjal", "$rd, $imm20">;
@@ -2243,3 +2248,12 @@ let Predicates = [HasCheri, HasCheriRVC, HasStdExtC, IsRV64, IsCapMode] in {
 def : CompressPat<(CSD GPR:$rs2, CSP:$rs1, uimm9_lsb000:$imm),
                   (C_CSDCSP GPR:$rs2, CSP:$rs1, uimm9_lsb000:$imm)>;
 } // Predicates = [HasCheri, HasCheriRVC, HasStdExtC, IsRV64, IsCapMode]
+
+
+let Predicates = [HasCheri, IsRV32, IsCapMode, IsRV32E] in {
+let mayLoad = true, mayStore = false, hasSideEffects = false in
+def PseudoCLLW : Pseudo<(outs GPR:$dst), (ins bare_symbol:$src), [],
+                        "cllc", "$dst, $src">;
+def : Pat<(load (load globaladdr:$src)),
+          (PseudoCLLW bare_symbol:$src)>;
+}

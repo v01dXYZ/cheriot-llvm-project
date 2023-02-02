@@ -84,8 +84,9 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &TM,
                                          const RISCVSubtarget &STI)
     : TargetLowering(TM), Subtarget(STI) {
 
-  if (Subtarget.isRVE())
-    report_fatal_error("Codegen not yet implemented for RVE");
+  if (Subtarget.isRV32E() &&
+      (Subtarget.getTargetABI() != RISCVABI::ABI_CHERIOT))
+    report_fatal_error("Codegen not yet implemented for RV32E");
 
   RISCVABI::ABI ABI = Subtarget.getTargetABI();
   assert(ABI != RISCVABI::ABI_Unknown && "Improperly initialised target ABI");
@@ -5767,9 +5768,9 @@ SDValue RISCVTargetLowering::getAddr(NodeTy *N, EVT Ty, SelectionDAG &DAG,
   SDLoc DL(N);
 
   if (RISCVABI::isCheriPureCapABI(Subtarget.getTargetABI())) {
-    bool IsTiny = getTargetMachine().getCodeModel() == CodeModel::Tiny;
+    bool IsCheriot = Subtarget.getTargetABI() == RISCVABI::ABI_CHERIOT;
     SDValue Addr = getTargetNode(N, DL, Ty, DAG, 0);
-    if ((IsLocal && CanDeriveFromPcc) || IsTiny) {
+    if ((IsLocal && CanDeriveFromPcc) || IsCheriot) {
       // Use PC-relative addressing to access the symbol. This generates the
       // pattern (PseudoCLLC sym), which expands to
       // (cincoffsetimm (auipcc %pcrel_hi(sym)) %pcrel_lo(auipc)).
@@ -15071,10 +15072,16 @@ void RISCVTargetLowering::AdjustInstrPostInstrSelection(MachineInstr &MI,
 // register-size fields in the same situations they would be for fixed
 // arguments.
 
-static const MCPhysReg ArgGPRs[] = {
+static const MCPhysReg ArgGPRsFull[] = {
   RISCV::X10, RISCV::X11, RISCV::X12, RISCV::X13,
   RISCV::X14, RISCV::X15, RISCV::X16, RISCV::X17
 };
+
+static const MCPhysReg ArgGPRsE[] = {
+  RISCV::X10, RISCV::X11, RISCV::X12, RISCV::X13,
+  RISCV::X14, RISCV::X15
+};
+
 static const MCPhysReg ArgFPR16s[] = {
   RISCV::F10_H, RISCV::F11_H, RISCV::F12_H, RISCV::F13_H,
   RISCV::F14_H, RISCV::F15_H, RISCV::F16_H, RISCV::F17_H
@@ -15099,19 +15106,27 @@ static const MCPhysReg ArgVRM4s[] = {RISCV::V8M4, RISCV::V12M4, RISCV::V16M4,
                                      RISCV::V20M4};
 static const MCPhysReg ArgVRM8s[] = {RISCV::V8M8, RISCV::V16M8};
 
-static const MCPhysReg ArgGPCRs[] = {
+static const MCPhysReg ArgGPCRsFull[] = {
   RISCV::C10, RISCV::C11, RISCV::C12, RISCV::C13,
   RISCV::C14, RISCV::C15, RISCV::C16, RISCV::C17
+};
+
+static const MCPhysReg ArgGPCRsE[] = {
+  RISCV::C10, RISCV::C11, RISCV::C12, RISCV::C13,
+  RISCV::C14, RISCV::C15
 };
 
 // Pass a 2*XLEN argument that has been split into two XLEN values through
 // registers or the stack as necessary.
 static bool CC_RISCVAssign2XLen(unsigned XLen, CCState &State,
-                                bool IsPureCapVarArgs, CCValAssign VA1,
+                                bool IsPureCapVarArgs, bool IsRV32E, CCValAssign VA1,
                                 ISD::ArgFlagsTy ArgFlags1, unsigned ValNo2,
                                 MVT ValVT2, MVT LocVT2,
                                 ISD::ArgFlagsTy ArgFlags2) {
   unsigned XLenInBytes = XLen / 8;
+  auto ArgGPRs { IsRV32E ? ArrayRef<MCPhysReg>{ArgGPRsE} :
+      ArrayRef<MCPhysReg>{ArgGPRsFull} };
+
   if (Register Reg = IsPureCapVarArgs ? 0 : State.AllocateReg(ArgGPRs)) {
     // At least one half can be passed via register.
     State.addLoc(CCValAssign::getReg(VA1.getValNo(), VA1.getValVT(), Reg,
@@ -15179,6 +15194,10 @@ bool RISCV::CC_RISCV(const DataLayout &DL, RISCVABI::ABI ABI, unsigned ValNo,
                                     : MVT();
   MVT PtrVT = DL.isFatPointer(DL.getAllocaAddrSpace()) ? CLenVT : XLenVT;
   bool IsPureCapVarArgs = !IsFixed && RISCVABI::isCheriPureCapABI(ABI);
+  auto ArgGPRs { Subtarget.isRV32E() ? ArrayRef<MCPhysReg>{ArgGPRsE} :
+      ArrayRef<MCPhysReg>{ArgGPRsFull} };
+  auto ArgGPCRs { Subtarget.isRV32E() ? ArrayRef<MCPhysReg>{ArgGPCRsE} :
+      ArrayRef<MCPhysReg>{ArgGPCRsFull} };
 
   // Static chain parameter must not be passed in normal argument registers,
   // so we assign t2 for it as done in GCC's __builtin_call_with_static_chain
@@ -15323,8 +15342,8 @@ bool RISCV::CC_RISCV(const DataLayout &DL, RISCVABI::ABI ABI, unsigned ValNo,
     ISD::ArgFlagsTy AF = PendingArgFlags[0];
     PendingLocs.clear();
     PendingArgFlags.clear();
-    return CC_RISCVAssign2XLen(XLen, State, IsPureCapVarArgs, VA, AF,
-                               ValNo, ValVT, LocVT, ArgFlags);
+    return CC_RISCVAssign2XLen(XLen, State, IsPureCapVarArgs,
+            Subtarget.isRV32E(), VA, AF, ValNo, ValVT, LocVT, ArgFlags);
   }
 
   // Will be passed indirectly; make sure we allocate the right type of
@@ -15951,6 +15970,9 @@ SDValue RISCVTargetLowering::LowerFormalArguments(
   if (any_of(ArgLocs,
              [](CCValAssign &VA) { return VA.getLocVT().isScalableVector(); }))
     MF.getInfo<RISCVMachineFunctionInfo>()->setIsVectorCall();
+
+  auto ArgGPRs { Subtarget.isRV32E() ? ArrayRef<MCPhysReg>{ArgGPRsE} :
+      ArrayRef<MCPhysReg>{ArgGPRsFull} };
   if (IsVarArg && RISCVABI::isCheriPureCapABI(Subtarget.getTargetABI())) {
     // Record the frame index of the first variable argument
     // which is a value necessary to VASTART.
@@ -16405,6 +16427,9 @@ SDValue RISCVTargetLowering::LowerCall(CallLoweringInfo &CLI,
   SmallVector<CCValAssign, 16> RVLocs;
   CCState RetCCInfo(CallConv, IsVarArg, MF, RVLocs, *DAG.getContext());
   analyzeInputArgs(MF, RetCCInfo, Ins, /*IsRet=*/true, RISCV::CC_RISCV);
+
+  auto ArgGPRs { Subtarget.isRV32E() ? ArrayRef<MCPhysReg>{ArgGPRsE} :
+      ArrayRef<MCPhysReg>{ArgGPRsFull} };
 
   // Copy all of the result registers out of their specified physreg.
   for (auto &VA : RVLocs) {
