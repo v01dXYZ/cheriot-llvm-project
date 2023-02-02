@@ -4549,11 +4549,13 @@ CodeGenModule::GetAddrOfFunction(GlobalDecl GD, llvm::Type *Ty, bool ForVTable,
                                     IsForDefinition);
   auto *FD = cast<FunctionDecl>(GD.getDecl());
   if (FD->hasAttr<CHERICompartmentNameAttr>())
-    cast<llvm::Function>(F)->addFnAttr("cheri-compartment",
-                 FD->getAttr<CHERICompartmentNameAttr>()->getCompartmentName());
+    cast<llvm::Function>(F->stripPointerCasts())
+        ->addFnAttr(
+            "cheri-compartment",
+            FD->getAttr<CHERICompartmentNameAttr>()->getCompartmentName());
   else if (!getLangOpts().CheriCompartmentName.empty())
-    cast<llvm::Function>(F)->addFnAttr("cheri-compartment",
-                                       getLangOpts().CheriCompartmentName);
+    cast<llvm::Function>(F->stripPointerCasts())
+        ->addFnAttr("cheri-compartment", getLangOpts().CheriCompartmentName);
 
   // Returns kernel handle for HIP kernel stub function.
   if (LangOpts.CUDA && !LangOpts.CUDAIsDevice &&
