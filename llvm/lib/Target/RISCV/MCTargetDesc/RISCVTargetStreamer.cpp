@@ -52,7 +52,8 @@ void RISCVTargetStreamer::setTargetABI(RISCVABI::ABI ABI) {
 
 void RISCVTargetStreamer::emitTargetAttributes(const MCSubtargetInfo &STI,
                                                bool EmitStackAlign) {
-  if (STI.hasFeature(RISCV::FeatureRVE))
+  if (STI.hasFeature(RISCV::FeatureRVE) &&
+      !STI.hasFeature(RISCV::FeatureCapMode))
     report_fatal_error("Codegen not yet implemented for RVE");
 
   if (EmitStackAlign)

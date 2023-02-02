@@ -17,6 +17,7 @@
 def uimm12 : Operand<XLenVT>, ImmLeaf<XLenVT, [{return isUInt<12>(Imm);}]> {
   let ParserMatchClass = UImmAsmOperand<12>;
   let DecoderMethod = "decodeUImmOperand<12>";
+  let EncoderMethod = "getImmOpValue";
 }
 
 // A 12-bit signed immediate plus one where the imm range will be [-2047, 2048].

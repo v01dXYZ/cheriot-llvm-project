@@ -84,6 +84,7 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeRISCVTarget() {
   initializeRISCVMergeBaseOffsetOptPass(*PR);
   initializeRISCVOptWInstrsPass(*PR);
   initializeRISCVPreRAExpandPseudoPass(*PR);
+  initializeRISCVCheriCleanupOptPass(*PR);
   initializeRISCVExpandPseudoPass(*PR);
   initializeRISCVInsertVSETVLIPass(*PR);
   initializeRISCVInsertReadWriteCSRPass(*PR);
@@ -126,15 +127,25 @@ static Reloc::Model getEffectiveRelocModel(const Triple &TT,
   return RM.value_or(Reloc::Static);
 }
 
+static CodeModel::Model getEffectiveCodeModel(std::optional<CodeModel::Model> CM,
+                                              CodeModel::Model Default,
+                                              const TargetOptions &Options) {
+  if ((Options.MCOptions.ABIName == "cheriot") && CM.has_value() &&
+      (*CM == CodeModel::Tiny))
+    return *CM;
+  return getEffectiveCodeModel(CM, Default);
+}
+
 RISCVTargetMachine::RISCVTargetMachine(const Target &T, const Triple &TT,
                                        StringRef CPU, StringRef FS,
                                        const TargetOptions &Options,
                                        std::optional<Reloc::Model> RM,
                                        std::optional<CodeModel::Model> CM,
                                        CodeGenOpt::Level OL, bool JIT)
-    : LLVMTargetMachine(T, computeDataLayout(TT, FS, Options), TT, CPU,
-                        FS, Options, getEffectiveRelocModel(TT, RM),
-                        getEffectiveCodeModel(CM, CodeModel::Small), OL),
+    : LLVMTargetMachine(T, computeDataLayout(TT, FS, Options), TT, CPU, FS,
+                        Options, getEffectiveRelocModel(TT, RM),
+                        ::getEffectiveCodeModel(CM, CodeModel::Small, Options),
+                        OL),
       TLOF(std::make_unique<RISCVELFTargetObjectFile>()) {
   initAsmInfo();
 
@@ -415,6 +426,7 @@ void RISCVPassConfig::addPreRegAlloc() {
   addPass(createRISCVPreRAExpandPseudoPass());
   if (TM->getOptLevel() != CodeGenOpt::None)
     addPass(createRISCVMergeBaseOffsetOptPass());
+  addPass(createRISCVCheriCleanupOptPass());
   addPass(createRISCVInsertVSETVLIPass());
   if (TM->getOptLevel() != CodeGenOpt::None)
     addPass(createCheriGetAddressElimPass());
