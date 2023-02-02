@@ -3289,9 +3289,7 @@ StringRef CXXNameMangler::getCallingConvQualifierName(CallingConv CC) {
   case CC_OpenCLKernel:
   case CC_PreserveMost:
   case CC_PreserveAll:
-  case CC_CHERICCall:
   case CC_CHERICCallee:
-  case CC_CHERICCallback:
   case CC_CHERILibCall:
     // FIXME: we should be mangling all of the above.
     return "";
@@ -3316,6 +3314,9 @@ StringRef CXXNameMangler::getCallingConvQualifierName(CallingConv CC) {
     return "swiftcall";
   case CC_SwiftAsync:
     return "swiftasynccall";
+  case CC_CHERICCall:
+  case CC_CHERICCallback:
+    return "chericcall";
   }
   llvm_unreachable("bad calling convention");
 }
