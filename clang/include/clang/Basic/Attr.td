@@ -2458,6 +2458,12 @@ def CHERICompartmentName : DeclOrTypeAttr {
   let Args = [StringArgument<"CompartmentName">];
 }
 
+def CHERILibCall : DeclOrTypeAttr {
+  let Spellings = [GNU<"cheri_libcall">];
+  let Documentation = [Undocumented];
+  let Subjects = SubjectList<[Function], ErrorDiag>;
+}
+
 
 def CHERINoSubobjectBounds : DeclOrTypeAttr {
   let Spellings = [GNU<"cheri_no_subobject_bounds">,

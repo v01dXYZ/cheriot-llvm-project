@@ -718,7 +718,11 @@ bool ItaniumMangleContextImpl::shouldMangleCXXName(const NamedDecl *D) {
       return true;
 
     // CHERI cross-compartment calls need mangling.
-    if (FD->hasAttr<CHERICompartmentNameAttr>())
+    if (FD->hasAttr<CHERICompartmentNameAttr>() ||
+        FD->hasAttr<CHERILibCallAttr>())
+      return true;
+
+    if (FD->getType()->castAs<FunctionType>()->getCallConv() == CC_CHERILibCall)
       return true;
 
     // "main" is not mangled.
@@ -3288,6 +3292,7 @@ StringRef CXXNameMangler::getCallingConvQualifierName(CallingConv CC) {
   case CC_CHERICCall:
   case CC_CHERICCallee:
   case CC_CHERICCallback:
+  case CC_CHERILibCall:
     // FIXME: we should be mangling all of the above.
     return "";
 

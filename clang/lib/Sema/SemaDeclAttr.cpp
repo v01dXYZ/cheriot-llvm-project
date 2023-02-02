@@ -5345,6 +5345,9 @@ static void handleCallConvAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
   case ParsedAttr::AT_CHERICCallback:
     D->addAttr(::new (S.Context) CHERICCallbackAttr(S.Context, AL));
     return;
+  case ParsedAttr::AT_CHERILibCall:
+    D->addAttr(::new (S.Context) CHERILibCallAttr(S.Context, AL));
+    return;
   case ParsedAttr::AT_AArch64VectorPcs:
     D->addAttr(::new (S.Context) AArch64VectorPcsAttr(S.Context, AL));
     return;
@@ -5565,6 +5568,9 @@ bool Sema::CheckCallingConvAttr(const ParsedAttr &Attrs, CallingConv &CC,
     break;
   case ParsedAttr::AT_CHERICCallback:
     CC = CC_CHERICCallback;
+    break;
+  case ParsedAttr::AT_CHERILibCall:
+    CC = CC_CHERILibCall;
     break;
   case ParsedAttr::AT_CHERICompartmentName: {
     StringRef CompartmentName;
