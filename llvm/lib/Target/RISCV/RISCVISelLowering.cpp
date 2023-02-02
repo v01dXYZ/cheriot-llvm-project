@@ -15626,7 +15626,7 @@ static SDValue unpackFromMemLoc(SelectionDAG &DAG, SDValue Chain,
   if (ViaCap)
     Val = DAG.getExtLoad(
       ExtType, DL, LocVT, Chain,
-      DAG.getPointerAdd(DL, DAG.getCopyFromReg(Chain, DL, RISCV::C5, MVT::iFATPTR64), VA.getLocMemOffset()),
+      DAG.getPointerAdd(DL, DAG.getCopyFromReg(Chain, DL, RISCV::C5, MVT::c64), VA.getLocMemOffset()),
       MachinePointerInfo::getFixedStack(DAG.getMachineFunction(), FI), ValVT);
   else {
     SDValue FIN = DAG.getFrameIndex(FI, PtrVT);

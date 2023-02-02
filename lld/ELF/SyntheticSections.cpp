@@ -2267,7 +2267,21 @@ void SymbolTableBaseSection::sortSymTabSymbols() {
 void SymbolTableBaseSection::addSymbol(Symbol *b) {
   // Adding a local symbol to a .dynsym is a bug.
   assert(this->type != SHT_DYNSYM || !b->isLocal());
-  symbols.push_back({b, strTabSec.addString(b->getName(), false)});
+
+  // If we're linking a compartment, mark every symbol as local except for
+  // ones in the export table.
+  if (config->compartment) {
+    if (auto *def = dyn_cast<Defined>(b)) {
+      auto *section = dyn_cast_or_null<InputSection>(def->section);
+      if (!section || (section->name != ".compartment_exports")) {
+        b->binding = STB_LOCAL;
+      }
+    }
+  }
+
+  // XXX can we infer hashIt = false from assert above?
+  bool hashIt = b->isLocal();
+  symbols.push_back({b, strTabSec.addString(b->getName(), hashIt)});
 }
 
 size_t SymbolTableBaseSection::getSymbolIndex(Symbol *sym) {

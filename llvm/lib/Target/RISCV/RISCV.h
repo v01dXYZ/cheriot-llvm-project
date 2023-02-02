@@ -25,6 +25,8 @@ class MCInst;
 class MCOperand;
 class MachineInstr;
 class MachineOperand;
+// XXX belongs in previous CL
+class ModulePass;
 class PassRegistry;
 class RISCVRegisterBankInfo;
 class RISCVSubtarget;

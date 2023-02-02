@@ -280,6 +280,7 @@ struct Config {
   bool relrPackDynRelocs = false;
   llvm::DenseSet<llvm::StringRef> saveTempsArgs;
   llvm::SmallVector<std::pair<llvm::GlobPattern, uint32_t>, 0> shuffleSections;
+  bool compartment = false;
   bool sortCapRelocs;
   bool singleRoRx;
   bool shared;

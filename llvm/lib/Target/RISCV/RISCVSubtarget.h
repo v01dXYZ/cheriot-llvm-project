@@ -129,6 +129,8 @@ public:
            HasStdExtZvfbfwma;
   }
   bool is64Bit() const { return IsRV64; }
+  // XXX belongs in previous cl
+  bool isRV32E() const { return IsRVE && !IsRV64; }
   MVT getXLenVT() const { return XLenVT; }
   unsigned getXLen() const { return XLen; }
   unsigned getFLen() const {

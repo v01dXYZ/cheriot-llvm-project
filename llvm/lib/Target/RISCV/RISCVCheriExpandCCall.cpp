@@ -7,6 +7,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/Pass.h"
 #include "llvm/Target/TargetMachine.h"
 
 #include <string>
@@ -59,7 +60,7 @@ public:
     auto *ImportValue = ConstantStruct::get(
         ImportType, Export, ConstantPointerNull::get(Export->getType()));
     auto *Import = new GlobalVariable(
-        *M, ImportType, true, GlobalValue::ExternalLinkage, ImportValue,
+        *M, ImportType, true, GlobalValue::LinkOnceODRLinkage, ImportValue,
         ImportName, nullptr, GlobalValue::NotThreadLocal, 200);
     Import->setComdat(M->getOrInsertComdat(ImportName));
     Import->setSection(".compartment_imports");

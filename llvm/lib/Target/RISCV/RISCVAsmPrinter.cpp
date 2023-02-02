@@ -38,7 +38,7 @@
 #include "llvm/MC/MCStreamer.h"
 #include "llvm/MC/MCSymbol.h"
 #include "llvm/MC/MCSectionELF.h"
-#include "llvm/Support/TargetRegistry.h"
+#include "llvm/MC/TargetRegistry.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/Instrumentation/HWAddressSanitizer.h"
 
@@ -284,7 +284,7 @@ void RISCVAsmPrinter::emitEndOfAsmFile(Module &M) {
     auto &C = OutStreamer->getContext();
     auto *Exports = C.getELFSection(".compartment_exports",
           ELF::SHT_PROGBITS, ELF::SHF_ALLOC);
-    OutStreamer->SwitchSection(Exports);
+    OutStreamer->switchSection(Exports);
     auto CompartmentStartSym = C.getOrCreateSymbol("__compartment_pcc_start");
     for (auto &Entry : CompartmentEntries) {
       std::string ExportName("__export_");
@@ -294,7 +294,7 @@ void RISCVAsmPrinter::emitEndOfAsmFile(Module &M) {
       auto Sym = C.getOrCreateSymbol(ExportName);
       OutStreamer->emitSymbolAttribute(Sym, MCSA_ELF_TypeObject);
       OutStreamer->emitSymbolAttribute(Sym, MCSA_Global);
-      OutStreamer->emitValueToAlignment(4);
+      OutStreamer->emitValueToAlignment(Align(4));
       OutStreamer->emitLabel(Sym);
       emitLabelDifference(Entry.FnSym, CompartmentStartSym, 2);
       // FIXME: Get stack size as function attribute
