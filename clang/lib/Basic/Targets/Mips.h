@@ -393,6 +393,10 @@ public:
         CCCR_OK : CCCR_Warning;
   }
 
+  CheriCCallbackABIKind cheriCallbackKind() const override {
+    return CCB_Struct;
+  }
+
   std::string_view getClobbers() const override {
     // In GCC, $1 is not widely used in generated code (it's used only in a few
     // specific situations), so there is no real need for users to add it to

@@ -293,7 +293,11 @@ void RISCVAsmPrinter::emitEndOfAsmFile(Module &M) {
       ExportName += Entry.FnSym->getName();
       auto Sym = C.getOrCreateSymbol(ExportName);
       OutStreamer->emitSymbolAttribute(Sym, MCSA_ELF_TypeObject);
-      OutStreamer->emitSymbolAttribute(Sym, MCSA_Global);
+      // If the function isn't global, don't make its export table entry global
+      // either.  Two different compilation units in the same compartment may
+      // export different static things.
+      if (Entry.Fn.hasExternalLinkage())
+        OutStreamer->emitSymbolAttribute(Sym, MCSA_Global);
       OutStreamer->emitValueToAlignment(Align(4));
       OutStreamer->emitLabel(Sym);
       emitLabelDifference(Entry.FnSym, CompartmentStartSym, 2);

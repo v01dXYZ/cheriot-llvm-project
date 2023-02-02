@@ -9427,7 +9427,9 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
     handleCHERISubobjectBoundsUseRemainingSizeAttr(S, D, AL);
     break;
   case ParsedAttr::AT_CHERICCallee:
-    if (S.getLangOpts().CheriCompartmentName == std::string())
+    if (S.getLangOpts().CheriCompartmentName == std::string() &&
+        S.getASTContext().getTargetInfo().cheriCallbackKind() ==
+            TargetInfo::CCB_ImportTable)
       S.Diag(D->getLocation(), diag::err_cheri_ccallee_no_compartment);
     LLVM_FALLTHROUGH;
   case ParsedAttr::AT_CHERICCall:
