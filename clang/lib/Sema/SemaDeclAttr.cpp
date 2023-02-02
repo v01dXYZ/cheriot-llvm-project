@@ -2396,6 +2396,16 @@ static void handleCHERICompartmentName(Sema &S, Decl *D, const ParsedAttr &Attr)
   D->addAttr(::new (S.Context) CHERICompartmentNameAttr(S.Context, Attr, Str));
 }
 
+static void handleInterruptState(Sema &S, Decl *D, const ParsedAttr &Attr) {
+  // FIXME: Add error message
+  if (!Attr.isArgIdent(0))
+    return;
+  IdentifierLoc *Loc = Attr.getArgAsIdent(0);
+  StringRef Str = Loc->Ident->getName();
+  InterruptStateAttr::InterruptState State;
+  InterruptStateAttr::ConvertStrToInterruptState(Str, State);
+  D->addAttr(::new (S.Context) InterruptStateAttr(S.Context, Attr, State));
+}
 
 static void
 handleCHERISubobjectBoundsUseRemainingSizeAttr(Sema &S, Decl *D,
@@ -9422,6 +9432,9 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
     break;
   case ParsedAttr::AT_CHERICompartmentName:
     handleCHERICompartmentName(S, D, AL);
+    break;
+  case ParsedAttr::AT_InterruptState:
+    handleInterruptState(S, D, AL);
     break;
   case ParsedAttr::AT_PointerInterpretationCaps:
     handleSimpleAttribute<PointerInterpretationCapsAttr>(S, D, AL);

@@ -88,6 +88,17 @@ InstructionSelector *createRISCVInstructionSelector(const RISCVTargetMachine &,
                                                     RISCVSubtarget &,
                                                     RISCVRegisterBankInfo &);
 void initializeRISCVDAGToDAGISelPass(PassRegistry &);
+
+/// Returns the symbol name for either an import or export table entry.
+inline std::string getImportExportTableName(StringRef Compartment,
+                                            StringRef FnName, int CC,
+                                            bool IsImport) {
+  bool IsCCall =
+      (CC == CallingConv::CHERI_CCall) || (CC == CallingConv::CHERI_CCallee);
+  Twine TargetPrefix = !IsCCall ? "__library" : "_";
+  Twine KindPrefix = TargetPrefix + (IsImport ? "_import_" : "_export_");
+  return (KindPrefix + Compartment + "_" + FnName).str();
+}
 } // namespace llvm
 
 #endif
