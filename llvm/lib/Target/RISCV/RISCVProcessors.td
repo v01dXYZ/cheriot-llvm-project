@@ -201,3 +201,8 @@ def SYNTACORE_SCR1_MAX : RISCVProcessorModel<"syntacore-scr1-max",
                                               FeatureStdExtM,
                                               FeatureStdExtC],
                                              [TuneNoDefaultUnroll]>;
+
+def CHERIOT : RISCVProcessorModel<"cheriot",
+                                  NoSchedModel,
+                                  [FeatureCheri,
+                                   FeatureCapMode]>;
