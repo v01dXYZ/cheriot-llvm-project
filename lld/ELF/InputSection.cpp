@@ -244,7 +244,7 @@ InputSection *InputSectionBase::getLinkOrderDep() const {
 }
 
 // Find a function symbol that encloses a given location.
-template <unsigned SymbolType>
+template <class ELFT, unsigned SymbolType>
 Defined *InputSectionBase::getEnclosingSymbol(uint64_t offset) const {
   for (Symbol *b : file->getSymbols())
     if (Defined *d = dyn_cast<Defined>(b))
@@ -254,15 +254,18 @@ Defined *InputSectionBase::getEnclosingSymbol(uint64_t offset) const {
   return nullptr;
 }
 
+template <class ELFT>
 Defined *InputSectionBase::getEnclosingFunction(uint64_t offset) const {
-  return getEnclosingSymbol<STT_FUNC>(offset);
+  return getEnclosingSymbol<ELFT, STT_FUNC>(offset);
 }
 
+template <class ELFT>
 Defined *InputSectionBase::getEnclosingObject(uint64_t offset) const {
-  return getEnclosingSymbol<STT_OBJECT>(offset);
+  return getEnclosingSymbol<ELFT, STT_OBJECT>(offset);
 }
 
 // Returns an object file location string. Used to construct an error message.
+template <class ELFT>
 std::string InputSectionBase::getLocation(uint64_t offset) const {
   std::string secAndOffset =
       (name + "+0x" + Twine::utohexstr(offset) + ")").str();
@@ -272,9 +275,9 @@ std::string InputSectionBase::getLocation(uint64_t offset) const {
     return (config->outputFile + ":(" + secAndOffset).str();
 
   std::string filename = toString(file);
-  if (Defined *d = getEnclosingFunction(offset))
+  if (Defined *d = getEnclosingFunction<ELFT>(offset))
     return filename + ":(function " + toString(*d) + ": " + secAndOffset;
-  else if (Defined *d = getEnclosingObject(offset))
+  else if (Defined *d = getEnclosingObject<ELFT>(offset))
     return filename + ":(object " + toString(*d) + ": " + secAndOffset + ")";
 
   return filename + ":(" + secAndOffset;
@@ -653,35 +656,11 @@ static int64_t getTlsTpOffset(const Symbol &s) {
   }
 }
 
-// If the symbol is declared in a different compartment, record it
-// as imported. If the symbol doesn't have a compartment, record
-// its address.
-static void addCHERIImportedSymbol(const Symbol *sym, const InputFile *file) {
-  if (!config->shouldEmitCompartmentReport())
-    return;
-  auto *def = dyn_cast<Defined>(sym);
-  if (!def)
-    return;
-  auto *section = dyn_cast_or_null<InputSection>(def->section);
-  Config::CompartmentSymbols::Import import;
-  if (!section)
-    import.address = APInt(32, sym->getVA(0), false);
-  else if (section->file != file)
-    import.compartment = section->file->getName();
-  else
-    return; // Ignore calls to same compartment
-  import.name = sym->getName();
-  config->compartments[file->getName()].imports.insert(std::move(import));
-}
-
 uint64_t InputSectionBase::getRelocTargetVA(const InputFile *file, RelType type,
                                             int64_t a, uint64_t p,
                                             const Symbol &sym, RelExpr expr,
                                             const InputSectionBase *isec,
                                             uint64_t offset) {
-  // We only treat symbols as "imported" when they refer an exported symbol
-  // from a different compartment (or no compartment, ex. __export_mem_*)
-  addCHERIImportedSymbol(&sym, file);
 
   switch (expr) {
   case R_ABS:
@@ -1039,7 +1018,7 @@ void InputSection::relocateNonAlloc(uint8_t *buf, ArrayRef<RelTy> rels) {
       continue;
     }
 
-    std::string msg = getLocation(offset) + ": has non-ABS relocation " +
+    std::string msg = getLocation<ELFT>(offset) + ": has non-ABS relocation " +
                       toString(type) + " against symbol '" + toString(sym) +
                       "'";
     if (expr != R_PC && expr != R_ARM_PCA) {
@@ -1183,7 +1162,7 @@ void InputSectionBase::adjustSplitStackFunctionPrologues(uint8_t *buf,
     if (enclosingPrologueAttempted(rel.offset, prologues))
       continue;
 
-    if (Defined *f = getEnclosingFunction(rel.offset)) {
+    if (Defined *f = getEnclosingFunction<ELFT>(rel.offset)) {
       prologues.insert(f);
       if (target->adjustPrologueForCrossSplitStack(buf + f->value, end,
                                                    f->stOther))
@@ -1432,6 +1411,25 @@ template InputSection::InputSection(ObjFile<ELF64LE> &, const ELF64LE::Shdr &,
                                     StringRef);
 template InputSection::InputSection(ObjFile<ELF64BE> &, const ELF64BE::Shdr &,
                                     StringRef);
+
+template std::string InputSectionBase::getLocation<ELF32LE>(uint64_t) const;
+template std::string InputSectionBase::getLocation<ELF32BE>(uint64_t) const;
+template std::string InputSectionBase::getLocation<ELF64LE>(uint64_t) const;
+template std::string InputSectionBase::getLocation<ELF64BE>(uint64_t) const;
+
+template Defined *InputSectionBase::getEnclosingFunction<ELF32LE>(uint64_t Offset) const;
+template Defined *InputSectionBase::getEnclosingFunction<ELF32BE>(uint64_t Offset) const;
+template Defined *InputSectionBase::getEnclosingFunction<ELF64LE>(uint64_t Offset) const;
+template Defined *InputSectionBase::getEnclosingFunction<ELF64BE>(uint64_t Offset) const;
+
+template Defined *
+InputSectionBase::getEnclosingObject<ELF32LE>(uint64_t Offset) const;
+template Defined *
+InputSectionBase::getEnclosingObject<ELF32BE>(uint64_t Offset) const;
+template Defined *
+InputSectionBase::getEnclosingObject<ELF64LE>(uint64_t Offset) const;
+template Defined *
+InputSectionBase::getEnclosingObject<ELF64BE>(uint64_t Offset) const;
 
 template void InputSection::writeTo<ELF32LE>(uint8_t *);
 template void InputSection::writeTo<ELF32BE>(uint8_t *);

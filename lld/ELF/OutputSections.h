@@ -151,6 +151,7 @@ getInputSections(const OutputSection &os,
 // until Writer is initialized.
 struct Out {
   static uint8_t *bufferStart;
+  static size_t bufferSize;
   static PhdrEntry *tlsPhdr;
   static OutputSection *elfHeader;
   static OutputSection *programHeaders;

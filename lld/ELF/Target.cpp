@@ -105,7 +105,7 @@ TargetInfo *elf::getTarget() {
   llvm_unreachable("unknown target machine");
 }
 
-ErrorPlace elf::getErrorPlace(const uint8_t *loc) {
+template <class ELFT> static ErrorPlace getErrPlace(const uint8_t *loc) {
   assert(loc != nullptr);
   for (InputSectionBase *d : ctx.inputSections) {
     auto *isec = dyn_cast<InputSection>(d);
@@ -121,7 +121,7 @@ ErrorPlace elf::getErrorPlace(const uint8_t *loc) {
       continue;
     }
     if (isecLoc <= loc && loc < isecLoc + isec->getSize()) {
-      std::string objLoc = isec->getLocation(loc - isecLoc);
+      std::string objLoc = isec->getLocation<ELFT>(loc - isecLoc);
       // Return object file location and source file location.
       // TODO: Refactor getSrcMsg not to take a variable.
       Undefined dummy(nullptr, "", STB_LOCAL, 0, 0);
@@ -130,6 +130,21 @@ ErrorPlace elf::getErrorPlace(const uint8_t *loc) {
     }
   }
   return {};
+}
+
+ErrorPlace elf::getErrorPlace(const uint8_t *loc) {
+  switch (config->ekind) {
+  case ELF32LEKind:
+    return getErrPlace<ELF32LE>(loc);
+  case ELF32BEKind:
+    return getErrPlace<ELF32BE>(loc);
+  case ELF64LEKind:
+    return getErrPlace<ELF64LE>(loc);
+  case ELF64BEKind:
+    return getErrPlace<ELF64BE>(loc);
+  default:
+    llvm_unreachable("unknown ELF type");
+  }
 }
 
 TargetInfo::~TargetInfo() {}

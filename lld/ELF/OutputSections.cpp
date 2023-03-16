@@ -37,6 +37,7 @@ using namespace lld;
 using namespace lld::elf;
 
 uint8_t *Out::bufferStart;
+size_t Out::bufferSize;
 PhdrEntry *Out::tlsPhdr;
 OutputSection *Out::elfHeader;
 OutputSection *Out::programHeaders;

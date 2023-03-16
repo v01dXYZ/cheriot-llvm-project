@@ -59,6 +59,9 @@ std::string lld::toString(const elf::Symbol &sym) {
   return ret;
 }
 
+static std::string getLocationNonTemplate(InputSectionBase *isec,
+                                          uint64_t symOffset);
+
 std::string lld::verboseToString(const Symbol *b, uint64_t symOffset) {
   std::string msg;
 
@@ -106,7 +109,7 @@ std::string lld::verboseToString(const Symbol *b, uint64_t symOffset) {
   if (name.empty()) {
     if (dr && dr->section) {
       if (isec) {
-        name = isec->getLocation(symOffset);
+        name = getLocationNonTemplate(isec, symOffset);
       } else {
         name = (dr->section->name + "+0x" + utohexstr(symOffset)).str();
       }
@@ -442,6 +445,22 @@ void elf::maybeWarnUnorderableSymbol(const Symbol *sym) {
     report(": unable to order synthetic symbol: ");
   else if (d && !d->section->isLive())
     report(": unable to order discarded symbol: ");
+}
+
+static std::string getLocationNonTemplate(InputSectionBase *isec,
+                                          uint64_t symOffset) {
+  switch (config->ekind) {
+  default:
+    llvm_unreachable("Invalid kind");
+  case ELF32LEKind:
+    return isec->getLocation<ELF32LE>(symOffset);
+  case ELF32BEKind:
+    return isec->getLocation<ELF32BE>(symOffset);
+  case ELF64LEKind:
+    return isec->getLocation<ELF64LE>(symOffset);
+  case ELF64BEKind:
+    return isec->getLocation<ELF64BE>(symOffset);
+  }
 }
 
 // Returns true if a symbol can be replaced at load-time by a symbol

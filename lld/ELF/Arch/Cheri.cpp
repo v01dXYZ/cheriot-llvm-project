@@ -608,7 +608,18 @@ void CheriCapTableSection::writeTo(uint8_t* buf) {
 
 static Defined *findMatchingFunction(const InputSectionBase *isec,
                                      uint64_t symOffset) {
-  return isec->getEnclosingFunction(symOffset);
+  switch (config->ekind) {
+  default:
+    llvm_unreachable("Invalid kind");
+  case ELF32LEKind:
+    return isec->getEnclosingFunction<ELF32LE>(symOffset);
+  case ELF32BEKind:
+    return isec->getEnclosingFunction<ELF32BE>(symOffset);
+  case ELF64LEKind:
+    return isec->getEnclosingFunction<ELF64LE>(symOffset);
+  case ELF64BEKind:
+    return isec->getEnclosingFunction<ELF64BE>(symOffset);
+  }
 }
 
 CheriCapTableSection::CaptableMap &
