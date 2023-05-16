@@ -15948,7 +15948,7 @@ SDValue RISCVTargetLowering::LowerFormalArguments(
                      CallConv == CallingConv::Fast ? RISCV::CC_RISCV_FastCC
                                                    : RISCV::CC_RISCV);
 
-  bool hasStackArguments = false;
+  uint64_t stackArgumentSize = 0;
   for (unsigned i = 0, e = ArgLocs.size(); i != e; ++i) {
     CCValAssign &VA = ArgLocs[i];
     SDValue ArgValue;
@@ -15958,10 +15958,13 @@ SDValue RISCVTargetLowering::LowerFormalArguments(
       ArgValue = unpackF64OnRV32DSoftABI(DAG, Chain, VA, DL, PtrVT);
     else if (VA.isRegLoc())
       ArgValue = unpackFromRegLoc(DAG, Chain, VA, DL, Ins[i], *this);
-    else
+    else {
       ArgValue = unpackFromMemLoc(DAG, Chain, VA, DL, PtrVT, CallConv ==
               CallingConv::CHERI_CCallee);
-    hasStackArguments |= VA.isMemLoc();
+      stackArgumentSize =
+          std::max(stackArgumentSize,
+                   VA.getLocMemOffset() + VA.getValVT().getStoreSize());
+    }
 
     if (VA.getLocInfo() == CCValAssign::Indirect) {
       // If the original argument was split and passed by reference (e.g. i128
@@ -15990,11 +15993,12 @@ SDValue RISCVTargetLowering::LowerFormalArguments(
     InVals.push_back(ArgValue);
   }
 
-  if (hasStackArguments && (CallConv == CallingConv::CHERI_CCallee))
+  if (stackArgumentSize && (CallConv == CallingConv::CHERI_CCallee))
     MF.getRegInfo().addLiveIn(RISCV::C5);
 
   MachineFrameInfo &MFI = MF.getFrameInfo();
   RISCVMachineFunctionInfo *RVFI = MF.getInfo<RISCVMachineFunctionInfo>();
+  RVFI->setStackArgumentSize(stackArgumentSize);
   unsigned XLenInBytes = Subtarget.getXLen() / 8;
   if (any_of(ArgLocs,
              [](CCValAssign &VA) { return VA.getLocVT().isScalableVector(); }))
