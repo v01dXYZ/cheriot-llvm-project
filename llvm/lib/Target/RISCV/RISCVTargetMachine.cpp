@@ -424,8 +424,10 @@ void RISCVPassConfig::addMachineSSAOptimization() {
 
 void RISCVPassConfig::addPreRegAlloc() {
   addPass(createRISCVPreRAExpandPseudoPass());
-  if (TM->getOptLevel() != CodeGenOpt::None)
+  if (TM->getOptLevel() != CodeGenOpt::None) {
+    addPass(createRISCVCheriCleanupOptPass());
     addPass(createRISCVMergeBaseOffsetOptPass());
+  }
   addPass(createRISCVInsertVSETVLIPass());
   if (TM->getOptLevel() != CodeGenOpt::None)
     addPass(createCheriGetAddressElimPass());

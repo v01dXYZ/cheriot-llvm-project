@@ -1189,9 +1189,12 @@ let Predicates = [HasCheri, IsCapMode] in {
 // PCC-relative CLLC is two instructions, but GCP-relative needs 3, so the
 // maximum expanded size of this Pseudo is 12 bytes.
 let hasSideEffects = 0, mayLoad = 0, mayStore = 0, isCodeGenOnly = 0,
-    isAsmParserOnly = 1, Size = 12 in
+    isAsmParserOnly = 1, Size = 12 in {
 def PseudoCLLC : Pseudo<(outs GPCR:$dst), (ins bare_symbol:$src), [],
                         "cllc", "$dst, $src">;
+def PseudoCLLCInbounds : Pseudo<(outs GPCR:$dst), (ins bare_symbol:$src), [],
+                        "cllc.inbounds", "$dst, $src">;
+}
 
 def : Pat<(riscv_cllc tglobaladdr:$in), (PseudoCLLC tglobaladdr:$in)>;
 def : Pat<(riscv_cllc tblockaddress:$in), (PseudoCLLC tblockaddress:$in)>;
