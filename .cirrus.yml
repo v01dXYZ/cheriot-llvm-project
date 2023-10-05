@@ -51,5 +51,14 @@ merge_task:
     - cd Build
     - ninja install-distribution
     - cp ../llvm/LICENSE.TXT install/LLVM-LICENSE.TXT
+    # Artefact upload uploads symlinks as copies, so delete all of the clang symlinks
+    - rm install/bin/clang
+    - rm install/bin/clang++
+    - rm install/bin/clang-cl
+    - rm install/bin/clang-cpp
+    - rm install/bin/ld.lld
+    - rm install/bin/ld64*
+    - rm install/bin/lld-link
+    - rm install/bin/wasm-ld
   binaries_artifacts:
     path: "Build/install/**"
