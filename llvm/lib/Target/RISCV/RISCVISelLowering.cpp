@@ -12,8 +12,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "RISCVISelLowering.h"
-#include "MCTargetDesc/RISCVMatInt.h"
 #include "MCTargetDesc/RISCVCompressedCap.h"
+#include "MCTargetDesc/RISCVMatInt.h"
 #include "RISCV.h"
 #include "RISCVMachineFunctionInfo.h"
 #include "RISCVRegisterInfo.h"
@@ -30,6 +30,7 @@
 #include "llvm/CodeGen/MachineRegisterInfo.h"
 #include "llvm/CodeGen/TargetLoweringObjectFileImpl.h"
 #include "llvm/CodeGen/ValueTypes.h"
+#include "llvm/IR/CallingConv.h"
 #include "llvm/IR/DiagnosticInfo.h"
 #include "llvm/IR/DiagnosticPrinter.h"
 #include "llvm/IR/IRBuilder.h"
@@ -15902,13 +15903,17 @@ SDValue RISCVTargetLowering::LowerFormalArguments(
     SelectionDAG &DAG, SmallVectorImpl<SDValue> &InVals) const {
 
   MachineFunction &MF = DAG.getMachineFunction();
+  bool isCHERIoTCompartmentCall = false;
 
   switch (CallConv) {
   default:
     report_fatal_error("Unsupported calling convention");
+  case CallingConv::CHERI_CCallee:
+  case CallingConv::CHERI_CCall:
+    isCHERIoTCompartmentCall = true;
+    break;
   case CallingConv::C:
   case CallingConv::Fast:
-  case CallingConv::CHERI_CCallee:
   case CallingConv::CHERI_LibCall:
     break;
   case CallingConv::GHC:
@@ -15959,8 +15964,8 @@ SDValue RISCVTargetLowering::LowerFormalArguments(
     else if (VA.isRegLoc())
       ArgValue = unpackFromRegLoc(DAG, Chain, VA, DL, Ins[i], *this);
     else {
-      ArgValue = unpackFromMemLoc(DAG, Chain, VA, DL, PtrVT, CallConv ==
-              CallingConv::CHERI_CCallee);
+      ArgValue =
+          unpackFromMemLoc(DAG, Chain, VA, DL, PtrVT, isCHERIoTCompartmentCall);
       stackArgumentSize =
           std::max(stackArgumentSize,
                    VA.getLocMemOffset() + VA.getValVT().getStoreSize());
@@ -15993,7 +15998,7 @@ SDValue RISCVTargetLowering::LowerFormalArguments(
     InVals.push_back(ArgValue);
   }
 
-  if (stackArgumentSize && (CallConv == CallingConv::CHERI_CCallee))
+  if (stackArgumentSize && isCHERIoTCompartmentCall)
     MF.getRegInfo().addLiveIn(RISCV::C5);
 
   MachineFrameInfo &MFI = MF.getFrameInfo();
@@ -16134,6 +16139,14 @@ bool RISCVTargetLowering::isEligibleForTailCallOptimization(
     if (Arg.Flags.isByVal())
       return false;
 
+  // Do not tail call cross-compartment calls.  We could tail call ones that
+  // are internal to the compartment, but it's unlikely that we'll see much
+  // benefit from that.
+  if ((CalleeCC == CallingConv::CHERI_LibCall) ||
+      (CalleeCC == CallingConv::CHERI_CCall) ||
+      (CalleeCC == CallingConv::CHERI_CCallee))
+    return false;
+
   return true;
 }
 
@@ -16183,6 +16196,20 @@ SDValue RISCVTargetLowering::LowerCall(CallLoweringInfo &CLI,
   else if (CLI.CB && CLI.CB->isMustTailCall())
     report_fatal_error("failed to perform tail call elimination on a call "
                        "site marked musttail");
+
+  // Anything that changes the interrupt status on CHERIoT then we must do a
+  // call via the import table.
+  if (Subtarget.getTargetABI() == RISCVABI::ABI_CHERIOT)
+    if (auto *GV = dyn_cast<GlobalAddressSDNode>(Callee))
+      if (!isSafeToDirectCall(MF.getFunction(),
+                              *cast<Function>(GV->getGlobal()))) {
+        // TODO: We should be able to tail call these, we're just missing
+        // the relevant node.
+        IsTailCall = false;
+        if ((CallConv != CallingConv::CHERI_CCall) &&
+            ((CallConv != CallingConv::CHERI_CCallee)))
+          CallConv = CallingConv::CHERI_LibCall;
+      }
 
   // Get a count of how many bytes are to be pushed on the stack.
   unsigned NumBytes = ArgCCInfo.getStackSize();
@@ -16350,53 +16377,6 @@ SDValue RISCVTargetLowering::LowerCall(CallLoweringInfo &CLI,
                       DAG.getIntPtrConstant(NumBytes, DL));
       RegsToPass.emplace_back(RISCV::C5, BoundedArgFrame);
     }
-    if (CallConv == CallingConv::CHERI_CCall) {
-      auto *F = CLI.CB->getCalledFunction();
-      if (F) {
-        StringRef Compartment =
-            F->getFnAttribute("cheri-compartment").getValueAsString();
-        std::string ImportName = getImportExportTableName(
-            Compartment, F->getName(), CallConv, /*IsImport*/ true);
-        auto *GV = F->getParent()->getGlobalVariable(ImportName);
-        auto ImportPtr = DAG.getGlobalAddress(GV, DL, PtrVT, 0, 0);
-        auto Import = DAG.getLoad(PtrVT, DL, Chain, ImportPtr,
-                                  MachinePointerInfo(200, 0), 8 /*alignment*/);
-        RegsToPass.emplace_back(RISCV::C6, Import);
-      } else {
-        RegsToPass.emplace_back(RISCV::C6, Callee);
-      }
-    }
-  } else if (CallConv == CallingConv::CHERI_LibCall) {
-    // CHERI MCU libcalls are stateless functions that exist in a shared
-    // compartment.  They are provided by the normal import / export
-    // mechanism, but are invoked directly rather than via the compartment
-    // switcher.
-    auto &Fn = MF.getFunction();
-    StringRef CalleeName;
-    StringRef CompartmentName = "libcalls";
-    if (CLI.CB) {
-      if (auto *CFn = CLI.CB->getCalledFunction()) {
-        CalleeName = CFn->getName();
-        if (CFn->hasFnAttribute("cheri-compartment"))
-          CompartmentName =
-              CFn->getFnAttribute("cheri-compartment").getValueAsString();
-      }
-    } else
-      CalleeName =
-          cast<ExternalSymbolSDNode>(CLI.Callee.getNode())->getSymbol();
-    if (!CalleeName.empty()) {
-      std::string ImportName = getImportExportTableName(
-          CompartmentName, CalleeName, CallConv, /*IsImport*/ true);
-      auto *GV = Fn.getParent()->getGlobalVariable(ImportName);
-      // The global will have been created only if an import is required.  If
-      // not, then skip this and call directly.
-      if (GV) {
-        auto ImportPtr = DAG.getGlobalAddress(GV, DL, PtrVT, 0, 0);
-        auto Import = DAG.getLoad(PtrVT, DL, Chain, ImportPtr,
-                                  MachinePointerInfo(200, 0), 8 /*alignment*/);
-        Callee = Import;
-      }
-    }
   }
 
   // Build a sequence of copy-to-reg nodes, chained and glued together.
@@ -16503,8 +16483,11 @@ SDValue RISCVTargetLowering::LowerCall(CallLoweringInfo &CLI,
   }
 
   if (RISCVABI::isCheriPureCapABI(Subtarget.getTargetABI()))
-    if (CallConv == CallingConv::CHERI_CCall)
+    if ((CallConv == CallingConv::CHERI_CCall) ||
+        (CallConv == CallingConv::CHERI_CCallee))
       Chain = DAG.getNode(RISCVISD::CAP_COMPARTMENT_CALL, DL, NodeTys, Ops);
+    else if (CallConv == CallingConv::CHERI_LibCall)
+      Chain = DAG.getNode(RISCVISD::CAP_LIB_CALL, DL, NodeTys, Ops);
     else
       Chain = DAG.getNode(RISCVISD::CAP_CALL, DL, NodeTys, Ops);
   else
@@ -16783,6 +16766,7 @@ const char *RISCVTargetLowering::getTargetNodeName(unsigned Opcode) const {
   NODE_NAME_CASE(SRET_GLUE)
   NODE_NAME_CASE(MRET_GLUE)
   NODE_NAME_CASE(CAP_COMPARTMENT_CALL)
+  NODE_NAME_CASE(CAP_LIB_CALL)
   NODE_NAME_CASE(BOUNDS_SET)
   NODE_NAME_CASE(CALL)
   NODE_NAME_CASE(SELECT_CC)

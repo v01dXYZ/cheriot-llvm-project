@@ -327,7 +327,6 @@ void RISCVPassConfig::addIRPasses() {
   }
 
   addPass(createCheriBoundAllocasPass());
-  addPass(createRISCVCheriExpandCCallPass());
   TargetPassConfig::addIRPasses();
 }
 
@@ -399,7 +398,8 @@ void RISCVPassConfig::addPreEmitPass2() {
     // ensuring return instruction is detected correctly.
     addPass(createRISCVPushPopOptimizationPass());
   }
-  addPass(createRISCVExpandPseudoPass());
+  addPass(createRISCVExpandPseudoPass(
+      getTM<RISCVTargetMachine>().ImportedFunctions));
 
   // Schedule the expansion of AMOs at the last possible moment, avoiding the
   // possibility for other passes to break the requirements for forward

@@ -23,7 +23,6 @@
 ; CHECK-NEXT:       Expand large fp convert
 ; CHECK-NEXT:       Expand Atomic instructions
 ; CHECK-NEXT:    CHERI bound stack allocations
-; CHECK-NEXT:    CHERI pre-codegen ccall expansion
 ; CHECK-NEXT:    FunctionPass Manager
 ; CHECK-NEXT:       Module Verifier
 ; CHECK-NEXT:       Lower Garbage Collection Instructions

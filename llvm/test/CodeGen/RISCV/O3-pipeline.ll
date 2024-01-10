@@ -32,7 +32,6 @@
 ; CHECK-NEXT:       Interleaved Access Pass
 ; CHECK-NEXT:       RISC-V CodeGenPrepare
 ; CHECK-NEXT:    CHERI bound stack allocations
-; CHECK-NEXT:    CHERI pre-codegen ccall expansion
 ; CHECK-NEXT:    FunctionPass Manager
 ; CHECK-NEXT:       Module Verifier
 ; CHECK-NEXT:       Dominator Tree Construction
@@ -111,6 +110,7 @@
 ; CHECK-NEXT:       Machine InstCombiner
 ; RV64-NEXT:        RISC-V Optimize W Instructions
 ; CHECK-NEXT:       RISC-V Pre-RA pseudo instruction expansion pass
+; CHECK-NEXT:       RISCV CHERIoT early bounds check elision pass
 ; CHECK-NEXT:       RISC-V Merge Base Offset
 ; CHECK-NEXT:       RISCV CHERI Cleanup
 ; CHECK-NEXT:       RISC-V Insert VSETVLI pass
@@ -187,7 +187,7 @@
 ; CHECK-NEXT:       Machine Optimization Remark Emitter
 ; CHECK-NEXT:       Stack Frame Layout Analysis
 ; CHECK-NEXT:       RISC-V Zcmp move merging pass
-; CHECK-NEXT:       RISC-V Zcmp Push/Pop optimization pass 
+; CHECK-NEXT:       RISC-V Zcmp Push/Pop optimization pass
 ; CHECK-NEXT:       RISC-V pseudo instruction expansion pass
 ; CHECK-NEXT:       RISC-V atomic pseudo instruction expansion pass
 ; CHECK-NEXT:       Unpack machine instruction bundles
