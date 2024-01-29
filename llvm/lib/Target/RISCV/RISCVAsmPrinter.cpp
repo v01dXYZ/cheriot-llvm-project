@@ -334,8 +334,8 @@ void RISCVAsmPrinter::emitEndOfAsmFile(Module &M) {
 
   if (!CompartmentEntries.empty()) {
     auto &C = OutStreamer->getContext();
-    auto *Exports = C.getELFSection(".compartment_exports",
-          ELF::SHT_PROGBITS, ELF::SHF_ALLOC);
+    auto *Exports = C.getELFSection(".compartment_exports", ELF::SHT_PROGBITS,
+                                    ELF::SHF_ALLOC | ELF::SHF_GNU_RETAIN);
     OutStreamer->switchSection(Exports);
     auto CompartmentStartSym = C.getOrCreateSymbol("__compartment_pcc_start");
     for (auto &Entry : CompartmentEntries) {
