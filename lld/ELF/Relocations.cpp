@@ -968,21 +968,25 @@ static bool canDefineSymbolInExecutable(Symbol &sym) {
 bool RelocationScanner::isStaticLinkTimeConstant(RelExpr e, RelType type,
                                                  const Symbol &sym,
                                                  uint64_t relOff) const {
+  // XXX R_DTPREL, *TLS*?
   // These expressions always compute a constant
-  if (oneof<R_GOTPLT, R_GOT_OFF, R_RELAX_HINT, R_MIPS_GOT_LOCAL_PAGE,
-            R_MIPS_GOTREL, R_MIPS_GOT_OFF, R_MIPS_GOT_OFF32, R_MIPS_GOT_GP_PC,
+  if (oneof<R_GOTPLT, R_GOT_OFF, R_RELAX_HINT,
             R_CHERI_CAPABILITY_TABLE_INDEX,
             R_CHERI_CAPABILITY_TABLE_INDEX_SMALL_IMMEDIATE,
             R_CHERI_CAPABILITY_TABLE_INDEX_CALL,
             R_CHERI_CAPABILITY_TABLE_INDEX_CALL_SMALL_IMMEDIATE,
             R_CHERI_CAPABILITY_TABLE_ENTRY_PC,
             R_CHERI_CAPABILITY_TABLE_REL,
-            R_CHERI_COMPARTMENT_CGPREL_HI,
-            R_CHERI_COMPARTMENT_CGPREL_LO_I,
-            R_CHERI_COMPARTMENT_CGPREL_LO_S,
-            R_CHERI_COMPARTMENT_SIZE,
-            R_AARCH64_GOT_PAGE_PC, R_GOT_PC, R_GOTONLY_PC, R_GOTPLTONLY_PC,
-            R_PLT_PC, R_PLT_GOTPLT, R_PPC32_PLTREL, R_PPC64_CALL_PLT,
+            R_CHERIOT_COMPARTMENT_CGPREL_HI,
+            R_CHERIOT_COMPARTMENT_CGPREL_LO_I,
+            R_CHERIOT_COMPARTMENT_CGPREL_LO_S,
+            R_CHERIOT_COMPARTMENT_SIZE,
+            R_MIPS_GOT_LOCAL_PAGE, R_MIPS_GOTREL, R_MIPS_GOT_OFF,
+            R_MIPS_GOT_OFF32, R_MIPS_GOT_GP_PC, R_MIPS_TLSGD,
+            R_AARCH64_GOT_PAGE_PC,
+            R_GOT_PC, R_GOTONLY_PC, R_GOTPLTONLY_PC,
+            R_PLT_PC, R_PLT_GOTPLT,
+            R_PPC32_PLTREL, R_PPC64_CALL_PLT,
             R_PPC64_RELAX_TOC, R_RISCV_ADD, R_AARCH64_GOT_PAGE,
             R_LOONGARCH_PLT_PAGE_PC, R_LOONGARCH_GOT, R_LOONGARCH_GOT_PAGE_PC>(
           e))
