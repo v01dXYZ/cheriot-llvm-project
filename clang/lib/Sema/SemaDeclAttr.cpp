@@ -2407,6 +2407,14 @@ static void handleInterruptState(Sema &S, Decl *D, const ParsedAttr &Attr) {
   D->addAttr(::new (S.Context) InterruptStateAttr(S.Context, Attr, State));
 }
 
+static void handleMinimumStack(Sema &S, Decl *D, const ParsedAttr &Attr) {
+  uint32_t size;
+  if ((Attr.getNumArgs() != 1) ||
+      !checkUInt32Argument(S, Attr, Attr.getArgAsExpr(0), size))
+    return;
+  D->addAttr(::new (S.Context) MinimumStackAttr(S.Context, Attr, size));
+}
+
 static void
 handleCHERISubobjectBoundsUseRemainingSizeAttr(Sema &S, Decl *D,
                                                const ParsedAttr &AL) {
@@ -9435,6 +9443,9 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
     break;
   case ParsedAttr::AT_InterruptState:
     handleInterruptState(S, D, AL);
+    break;
+  case ParsedAttr::AT_MinimumStack:
+    handleMinimumStack(S, D, AL);
     break;
   case ParsedAttr::AT_PointerInterpretationCaps:
     handleSimpleAttribute<PointerInterpretationCapsAttr>(S, D, AL);
