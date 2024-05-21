@@ -326,6 +326,7 @@ void RISCVPassConfig::addIRPasses() {
     addPass(createRISCVCodeGenPreparePass());
   }
 
+  addPass(createCheriotZeroSRetPass());
   addPass(createCheriBoundAllocasPass());
   TargetPassConfig::addIRPasses();
 }

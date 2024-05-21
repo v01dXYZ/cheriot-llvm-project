@@ -83,6 +83,7 @@ void initializeCallGraphWrapperPassPass(PassRegistry&);
 void initializeCheckDebugMachineModulePass(PassRegistry &);
 void initializeCheriBoundAllocasPass(PassRegistry &);
 void initializeCheriGetAddressElimPass(PassRegistry &);
+void initializeCheriotZeroSRetPass(PassRegistry &);
 void initializeCodeGenPreparePass(PassRegistry&);
 void initializeComplexDeinterleavingLegacyPassPass(PassRegistry&);
 void initializeConstantHoistingLegacyPassPass(PassRegistry&);
