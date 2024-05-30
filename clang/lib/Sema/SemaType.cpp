@@ -5498,7 +5498,16 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
       // OpenCL disallows functions without a prototype, but it doesn't enforce
       // strict prototypes as in C2x because it allows a function definition to
       // have an identifier list. See OpenCL 3.0 6.11/g for more details.
+      //
+      // In some ABIs (currently, just cheriot), treat functions with no
+      // parameters as void (as C23 and C++ do).
+      // FIXME: Clang 16 defaults to this behaviour, this special case can be
+      // removed on the next upstream merge.
+      bool TargetC23Prototypes =
+        S.getASTContext().getTargetInfo().areEmptyParameterListsVoid();
+
       if (!FTI.NumParams && !FTI.isVariadic &&
+          !TargetC23Prototypes &&
           !LangOpts.requiresStrictPrototypes() && !LangOpts.OpenCL) {
         // Simple void foo(), where the incoming T is the result type.
         T = Context.getFunctionNoProtoType(T, EI);
