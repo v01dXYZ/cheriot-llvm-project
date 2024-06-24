@@ -27,6 +27,7 @@ namespace targets {
 class RISCVTargetInfo : public TargetInfo {
   void setDataLayout() {
     StringRef Layout;
+    IsABICHERIoT = false;
 
     if (ABI == "ilp32" || ABI == "ilp32f" || ABI == "ilp32d" ||
         ABI == "ilp32e" || ABI == "cheriot" ||
@@ -36,8 +37,10 @@ class RISCVTargetInfo : public TargetInfo {
         Layout = "e-m:e-pf200:64:64:64:32-p:32:32-i64:64-n32-S128";
       else
         Layout = "e-m:e-p:32:32-i64:64-n32-S128";
-      if (ABI == "cheriot")
+      if (ABI == "cheriot") {
+        IsABICHERIoT = true;
         EmptyParameterListIsVoid = true;
+      }
     } else if (ABI == "lp64" || ABI == "lp64f" || ABI == "lp64d" ||
                ABI == "l64pc128" || ABI == "l64pc128f" || ABI == "l64pc128d") {
       if (HasCheri)
@@ -61,6 +64,7 @@ protected:
   int CapSize = -1;
   bool HasCheri = false;
   bool HasCheriISAv9Semantics = false;
+  bool IsABICHERIoT = false;
   void setCapabilityABITypes() {
     IntPtrType = TargetInfo::SignedIntCap;
   }
@@ -144,6 +148,7 @@ public:
 
   uint64_t getPointerWidthV(LangAS AddrSpace) const override {
     return (AddrSpace == LangAS::cheri_capability) ? CapSize : PointerWidth;
+
   }
 
   uint64_t getPointerRangeV(LangAS AddrSpace) const override {
@@ -152,6 +157,10 @@ public:
 
   uint64_t getPointerAlignV(LangAS AddrSpace) const override {
     return (AddrSpace == LangAS::cheri_capability) ? CapSize : PointerAlign;
+  }
+
+  CallingConv getLibcallCallingConv() const override {
+    return IsABICHERIoT ? CallingConv::CC_CHERILibCall : CallingConv::CC_C;
   }
 
   bool SupportsCapabilities() const override { return HasCheri; }
