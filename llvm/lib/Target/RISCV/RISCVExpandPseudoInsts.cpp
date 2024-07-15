@@ -26,6 +26,7 @@
 #include "llvm/IR/CallingConv.h"
 #include "llvm/MC/MCContext.h"
 #include "llvm/Support/Compiler.h"
+#include "llvm/Support/Debug.h"
 
 using namespace llvm;
 
@@ -409,6 +410,14 @@ bool RISCVExpandPseudo::expandLibraryCall(
     // inserted by the back end, for example memcpy expanded from the LLVM
     // intrinsic.  These don't have accompanying LLVM functions and so we just
     // need to treat them as an external library call.
+    const auto &STI = MF->getSubtarget<RISCVSubtarget>();
+    if (STI.getTargetABI() == RISCVABI::ABI_CHERIOT_BAREMETAL) {
+      // If baremetal just blindly use a direct call
+      DEBUG_WITH_TYPE("baremetal", llvm::dbgs() <<
+        "baremetal library call of " << Callee.getSymbolName() << "\n");
+      MI.setDesc(TII->get(RISCV::PseudoCCALL));
+      return true;
+    }
     auto ImportEntryName = getImportExportTableName(
         "libcalls", Callee.getSymbolName(), CallingConv::CHERI_LibCall,
         /*IsImport*/ true);
@@ -571,9 +580,9 @@ bool RISCVExpandPseudo::expandAuipccInstPair(
     MachineBasicBlock &MBB, MachineBasicBlock::iterator MBBI,
     MachineBasicBlock::iterator &NextMBBI, unsigned FlagsHi,
     unsigned SecondOpcode, bool InBounds) {
-  bool IsCheriot =
-      MBB.getParent()->getSubtarget<RISCVSubtarget>().getTargetABI() ==
-      RISCVABI::ABI_CHERIOT;
+  auto ABI = MBB.getParent()->getSubtarget<RISCVSubtarget>().getTargetABI();
+  bool IsCheriot = ABI == RISCVABI::ABI_CHERIOT ||
+                   ABI == RISCVABI::ABI_CHERIOT_BAREMETAL;
   MachineFunction *MF = MBB.getParent();
   MachineInstr &MI = *MBBI;
   DebugLoc DL = MI.getDebugLoc();
@@ -624,8 +633,8 @@ bool RISCVExpandPseudo::expandAuipccInstPair(
 bool RISCVExpandPseudo::expandCapLoadLocalCap(
     MachineBasicBlock &MBB, MachineBasicBlock::iterator MBBI,
     MachineBasicBlock::iterator &NextMBBI, bool InBounds) {
-  if (MBB.getParent()->getSubtarget<RISCVSubtarget>().getTargetABI() ==
-      RISCVABI::ABI_CHERIOT) {
+  auto ABI = MBB.getParent()->getSubtarget<RISCVSubtarget>().getTargetABI();
+  if (ABI == RISCVABI::ABI_CHERIOT || ABI == RISCVABI::ABI_CHERIOT_BAREMETAL) {
     const DebugLoc DL = MBBI->getDebugLoc();
     const MachineOperand &Symbol = MBBI->getOperand(1);
     const GlobalValue *GV = Symbol.getGlobal();

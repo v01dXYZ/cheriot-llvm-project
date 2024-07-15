@@ -55,7 +55,8 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &TM,
     : TargetLowering(TM), Subtarget(STI) {
 
   if (Subtarget.isRV32E() &&
-      (Subtarget.getTargetABI() != RISCVABI::ABI_CHERIOT))
+      (Subtarget.getTargetABI() != RISCVABI::ABI_CHERIOT &&
+       Subtarget.getTargetABI() != RISCVABI::ABI_CHERIOT_BAREMETAL))
     report_fatal_error("Codegen not yet implemented for RV32E");
 
   RISCVABI::ABI ABI = Subtarget.getTargetABI();
@@ -87,6 +88,7 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &TM,
   case RISCVABI::ABI_ILP32F:
   case RISCVABI::ABI_ILP32D:
   case RISCVABI::ABI_CHERIOT:
+  case RISCVABI::ABI_CHERIOT_BAREMETAL:
   case RISCVABI::ABI_IL32PC64:
   case RISCVABI::ABI_IL32PC64F:
   case RISCVABI::ABI_IL32PC64D:
@@ -2768,7 +2770,8 @@ SDValue RISCVTargetLowering::getAddr(NodeTy *N, EVT Ty, SelectionDAG &DAG,
   SDLoc DL(N);
 
   if (RISCVABI::isCheriPureCapABI(Subtarget.getTargetABI())) {
-    bool IsCheriot = Subtarget.getTargetABI() == RISCVABI::ABI_CHERIOT;
+    bool IsCheriot = Subtarget.getTargetABI() == RISCVABI::ABI_CHERIOT ||
+                     Subtarget.getTargetABI() == RISCVABI::ABI_CHERIOT_BAREMETAL;
     SDValue Addr = getTargetNode(N, DL, Ty, DAG, 0);
     if ((IsLocal && CanDeriveFromPcc) || IsCheriot) {
       // Use PC-relative addressing to access the symbol. This generates the
@@ -7444,6 +7447,7 @@ static bool CC_RISCV(const DataLayout &DL, RISCVABI::ABI ABI, unsigned ValNo,
   case RISCVABI::ABI_IL32PC64:
   case RISCVABI::ABI_L64PC128:
   case RISCVABI::ABI_CHERIOT:
+  case RISCVABI::ABI_CHERIOT_BAREMETAL:
     break;
   case RISCVABI::ABI_ILP32F:
   case RISCVABI::ABI_LP64F:
@@ -8632,9 +8636,11 @@ SDValue RISCVTargetLowering::LowerCall(CallLoweringInfo &CLI,
     if ((CallConv == CallingConv::CHERI_CCall) ||
         (CallConv == CallingConv::CHERI_CCallee))
       Chain = DAG.getNode(RISCVISD::CAP_COMPARTMENT_CALL, DL, NodeTys, Ops);
-    else if (CallConv == CallingConv::CHERI_LibCall)
+    else if (CallConv == CallingConv::CHERI_LibCall) {
+      assert(Subtarget.getTargetABI() != RISCVABI::ABI_CHERIOT_BAREMETAL &&
+             "Cheri libcall on baremetal");
       Chain = DAG.getNode(RISCVISD::CAP_LIB_CALL, DL, NodeTys, Ops);
-    else
+    } else
       Chain = DAG.getNode(RISCVISD::CAP_CALL, DL, NodeTys, Ops);
   else
     Chain = DAG.getNode(RISCVISD::CALL, DL, NodeTys, Ops);

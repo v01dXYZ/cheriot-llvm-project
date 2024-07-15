@@ -10965,6 +10965,7 @@ public:
   RISCVABIInfo(CodeGen::CodeGenTypes &CGT, unsigned XLen, unsigned FLen)
       : DefaultABIInfo(CGT), XLen(XLen), FLen(FLen) {
     if (CGT.getTarget().getABI() == "cheriot") {
+      // NB: not for "cheriot-baremetal"
       RuntimeCC = llvm::CallingConv::CHERI_LibCall;
       AtomicsCC = CallingConv::CC_CHERILibCall;
     }

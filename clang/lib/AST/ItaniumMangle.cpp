@@ -674,11 +674,15 @@ bool ItaniumMangleContextImpl::shouldMangleCXXName(const NamedDecl *D) {
 
     // CHERI cross-compartment calls need mangling.
     if (FD->hasAttr<CHERICompartmentNameAttr>() ||
-        FD->hasAttr<CHERILibCallAttr>())
+        FD->hasAttr<CHERILibCallAttr>()) {
+      assert(getASTContext().getTargetInfo().getTargetOpts().ABI != "cheriot-baremetal");
       return true;
+    }
 
-    if (FD->getType()->castAs<FunctionType>()->getCallConv() == CC_CHERILibCall)
+    if (FD->getType()->castAs<FunctionType>()->getCallConv() == CC_CHERILibCall) {
+      assert(getASTContext().getTargetInfo().getTargetOpts().ABI != "cheriot-baremetal");
       return true;
+    }
 
     // "main" is not mangled.
     if (FD->isMain())

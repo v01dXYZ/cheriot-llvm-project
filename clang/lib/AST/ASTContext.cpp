@@ -10940,7 +10940,8 @@ QualType ASTContext::GetBuiltinType(unsigned Id,
   bool Variadic = (TypeStr[0] == '.');
 
   FunctionType::ExtInfo EI(getDefaultCallingConvention(
-      Variadic, /*IsCXXMethod=*/false, /*IsBuiltin=*/true, /*IsLibcall*/ true));
+      Variadic, /*IsCXXMethod=*/false, /*IsBuiltin=*/true,
+      /*IsLibcall*/ Target->getTargetOpts().ABI != "cheriot-baremetal"));
   if (BuiltinInfo.isNoReturn(Id)) EI = EI.withNoReturn(true);
 
 
@@ -11334,8 +11335,10 @@ CallingConv ASTContext::getDefaultCallingConvention(bool IsVariadic,
       break;
     }
   }
-  if (IsLibcall)
+  if (IsLibcall) {
+    assert(Target->getTargetOpts().ABI != "cheriot-baremetal");
     return Target->getLibcallCallingConv();
+  }
   return Target->getDefaultCallingConv();
 }
 

@@ -309,6 +309,7 @@ enum ABI {
   ABI_L64PC128F,
   ABI_L64PC128D,
   ABI_CHERIOT,
+  ABI_CHERIOT_BAREMETAL,
   ABI_Unknown
 };
 
@@ -340,6 +341,7 @@ inline static bool isCheriPureCapABI(ABI TargetABI) {
   case ABI_L64PC128F:
   case ABI_L64PC128D:
   case ABI_CHERIOT:
+  case ABI_CHERIOT_BAREMETAL:
     return true;
   default:
     llvm_unreachable("Improperly initialised target ABI");

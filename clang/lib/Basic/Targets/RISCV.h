@@ -26,17 +26,21 @@ class RISCVTargetInfo : public TargetInfo {
   void setDataLayout() {
     StringRef Layout;
     IsABICHERIoT = false;
+    IsABICHERIoTBareMetal = false;
 
     if (ABI == "ilp32" || ABI == "ilp32f" || ABI == "ilp32d" ||
-        ABI == "ilp32e" || ABI == "cheriot" ||
+        ABI == "ilp32e" ||
+        ABI == "cheriot" || ABI == "cheriot-baremetal" ||
         ABI == "il32pc64" || ABI == "il32pc64f" || ABI == "il32pc64d" ||
         ABI == "il32pc64e") {
       if (HasCheri)
         Layout = "e-m:e-pf200:64:64:64:32-p:32:32-i64:64-n32-S128";
       else
         Layout = "e-m:e-p:32:32-i64:64-n32-S128";
-      if (ABI == "cheriot") {
+      if (ABI == "cheriot" || ABI == "cheriot-baremetal") {
         IsABICHERIoT = true;
+        if (ABI == "cheriot-baremetal")
+          IsABICHERIoTBareMetal = true;
         EmptyParameterListIsVoid = true;
       }
     } else if (ABI == "lp64" || ABI == "lp64f" || ABI == "lp64d" ||
@@ -87,6 +91,7 @@ protected:
   bool HasZvamo = false;
   bool HasZvlsseg = false;
   bool IsABICHERIoT = false;
+  bool IsABICHERIoTBareMetal = false;
 
   static const Builtin::Info BuiltinInfo[];
 
@@ -159,7 +164,8 @@ public:
   uint64_t getCHERICapabilityAlign() const override { return CapSize; }
 
   CallingConv getLibcallCallingConv() const override {
-    return IsABICHERIoT ? CallingConv::CC_CHERILibCall : CallingConv::CC_C;
+    return IsABICHERIoT && !IsABICHERIoTBareMetal ?
+        CallingConv::CC_CHERILibCall : CallingConv::CC_C;
   }
 
   uint64_t getPointerWidthV(unsigned AddrSpace) const override {
@@ -184,8 +190,11 @@ public:
     if ((CC == CallingConv::CC_CHERICCall) ||
         (CC == CallingConv::CC_CHERICCallee) ||
         (CC == CallingConv::CC_CHERICCallback) ||
-        (CC == CallingConv::CC_CHERILibCall))
+        (CC == CallingConv::CC_CHERILibCall)) {
+      // NB: with cheriot-baremetal the caller will generate a warning
+      //   and downgrade to the default target CC
       return ABI == "cheriot" ? CCCR_OK : CCCR_Warning;
+    }
     return TargetInfo::checkCallingConvention(CC);
   }
 
@@ -209,10 +218,11 @@ public:
       return true;
     }
     if (Name == "il32pc64" || Name == "il32pc64f" || Name == "il32pc64d" ||
-        Name == "cheriot") {
+        Name == "cheriot" || Name == "cheriot-baremetal") {
       setCapabilityABITypes();
       CapabilityABI = true;
       ABI = Name;
+      // XXX -cheriot-bare-metal may not be honored
       return true;
     }
     return false;
