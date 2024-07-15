@@ -5364,6 +5364,7 @@ static void handleCallConvAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
     D->addAttr(::new (S.Context) CHERICCallbackAttr(S.Context, AL));
     return;
   case ParsedAttr::AT_CHERILibCall:
+    assert(S.Context.getTargetInfo().getTargetOpts().ABI != "cheriot-baremetal");
     D->addAttr(::new (S.Context) CHERILibCallAttr(S.Context, AL));
     return;
   case ParsedAttr::AT_AArch64VectorPcs:
@@ -5588,6 +5589,7 @@ bool Sema::CheckCallingConvAttr(const ParsedAttr &Attrs, CallingConv &CC,
     CC = CC_CHERICCallback;
     break;
   case ParsedAttr::AT_CHERILibCall:
+    assert(Context.getTargetInfo().getTargetOpts().ABI != "cheriot-baremetal");
     CC = CC_CHERILibCall;
     break;
   case ParsedAttr::AT_CHERICompartmentName: {

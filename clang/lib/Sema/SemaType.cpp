@@ -7865,6 +7865,7 @@ static Attr *getCCTypeAttr(ASTContext &Ctx, ParsedAttr &Attr) {
   case ParsedAttr::AT_CHERICCallback:
     return createSimpleAttr<CHERICCallAttr>(Ctx, Attr);
   case ParsedAttr::AT_CHERILibCall:
+    assert(Ctx.getTargetInfo().getTargetOpts().ABI != "cheriot-baremetal");
     return createSimpleAttr<CHERILibCallAttr>(Ctx, Attr);
   case ParsedAttr::AT_CHERICompartmentName: {
     StringRef Str;

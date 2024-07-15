@@ -47,8 +47,8 @@ public:
 };
 
 bool RISCVCheriCleanupOpt::runOnMachineFunction(MachineFunction &MF) {
-  if (static_cast<const RISCVSubtarget &>(MF.getSubtarget()).getTargetABI() !=
-      RISCVABI::ABI_CHERIOT)
+  auto ABI = static_cast<const RISCVSubtarget &>(MF.getSubtarget()).getTargetABI();
+  if (ABI != RISCVABI::ABI_CHERIOT && ABI != RISCVABI::ABI_CHERIOT_BAREMETAL)
     return false;
 
   auto &MRI = MF.getRegInfo();
