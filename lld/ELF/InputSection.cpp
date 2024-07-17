@@ -64,6 +64,8 @@ InputSectionBase::InputSectionBase(InputFile *file, uint64_t flags,
   if (sectionKind == SectionBase::Merge && content().size() > UINT32_MAX)
     error(toString(this) + ": section too large");
 
+  relaxAux = nullptr;
+
   // The ELF spec states that a value of 0 means the section has
   // no alignment constraints.
   uint32_t v = std::max<uint32_t>(addralign, 1);
