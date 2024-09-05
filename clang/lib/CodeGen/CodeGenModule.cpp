@@ -4560,9 +4560,11 @@ CodeGenModule::GetAddrOfFunction(GlobalDecl GD, llvm::Type *Ty, bool ForVTable,
     if (CC == CC_CHERICCallback)
       isExportedFunction = true;
     else if (!getLangOpts().CheriCompartmentName.empty() &&
-             (CC != CC_CHERILibCall))
-      cast<llvm::Function>(F->stripPointerCasts())
-          ->addFnAttr("cheri-compartment", getLangOpts().CheriCompartmentName);
+             (CC != CC_CHERILibCall)) {
+      // NB: guard against the underlying value being a Constant
+      if (auto *Fn = dyn_cast<llvm::Function>(F->stripPointerCasts()))
+        Fn->addFnAttr("cheri-compartment", getLangOpts().CheriCompartmentName);
+    }
   }
 
   if (FD->hasAttr<InterruptStateAttr>())
