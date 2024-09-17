@@ -20,6 +20,10 @@ def int_cheri_cap_base_get :
   Intrinsic<[llvm_anyint_ty],
             [llvm_cap_ty],
             [IntrNoMem, IntrWillReturn]>;
+def int_cheri_cap_top_get :
+  Intrinsic<[llvm_anyint_ty],
+            [llvm_cap_ty],
+            [IntrNoMem, IntrWillReturn]>;
 
 def int_cheri_cap_perms_and :
   Intrinsic<[llvm_cap_ty],
