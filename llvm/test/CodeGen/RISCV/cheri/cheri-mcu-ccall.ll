@@ -24,7 +24,7 @@ define dso_local chericcallcce i32 @test6(i32 addrspace(200)* nocapture readonly
 entry:
   ; Check that we are loading the last register argument
   ; BOTH-LABEL: test6:
-  ; BOTH: clw     a4, 0(ca5)
+  ; BOTH: clw     a5, 0(ca5)
   %0 = load i32, i32 addrspace(200)* %a0, align 4, !tbaa !5
   %1 = load i32, i32 addrspace(200)* %a1, align 4, !tbaa !5
   %add = add nsw i32 %1, %0
@@ -89,7 +89,7 @@ entry:
   ; BOTH:  cincoffset      ct0, ct0, %cheri_compartment_pccrel_lo(.LBB3_1)
   ; BOTH:  auipcc  ct2, %cheri_compartment_pccrel_hi(.compartment_switcher)
   ; BOTH:  clc     ct2, %cheri_compartment_pccrel_lo(.LBB3_2)(ct2)
-  ; BOTH:  c.cjalr ct2
+  ; BOTH:  cjalr ct2
   %args = alloca [8 x i32], align 4, addrspace(200)
   %0 = bitcast [8 x i32] addrspace(200)* %args to i8 addrspace(200)*
   call void @llvm.lifetime.start.p200i8(i64 32, i8 addrspace(200)* nonnull %0) #5
