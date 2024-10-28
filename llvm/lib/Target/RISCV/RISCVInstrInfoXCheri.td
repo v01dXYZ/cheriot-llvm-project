@@ -1875,8 +1875,9 @@ def PseudoCCALL : Pseudo<(outs), (ins cap_call_symbol:$func), []> {
   let AsmString = "ccall\t$func";
 }
 
+// PseudoCompartmentCall Expands to AUIPCC, CLC_64, C_CJALR (10 bytes).
 let Predicates = [HasCheri, IsCapMode],
-    isCall = 1, Defs = [C1], isCodeGenOnly = 1 in
+    isCall = 1, Defs = [C1], isCodeGenOnly = 1, Size = 10 in
 def PseudoCompartmentCall : Pseudo<(outs), (ins cap_call_symbol:$func), []>;
 
 let Predicates = [HasCheri, IsCapMode, IsPureCapABI] in {
