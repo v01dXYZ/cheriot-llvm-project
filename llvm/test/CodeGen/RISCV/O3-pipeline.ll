@@ -31,8 +31,9 @@
 ; CHECK-NEXT:       RISC-V gather/scatter lowering
 ; CHECK-NEXT:       Interleaved Access Pass
 ; CHECK-NEXT:       RISC-V CodeGenPrepare
-; CHECK-NEXT:    CHERI bound stack allocations
-; CHECK-NEXT:    FunctionPass Manager
+; CHECK-NEXT:       CHERIoT zero sret 
+; CHECK-NEXT:     CHERI bound stack allocations
+; CHECK-NEXT:     FunctionPass Manager
 ; CHECK-NEXT:       Module Verifier
 ; CHECK-NEXT:       Dominator Tree Construction
 ; CHECK-NEXT:       Basic Alias Analysis (stateless AA impl)
@@ -112,7 +113,6 @@
 ; CHECK-NEXT:       RISC-V Pre-RA pseudo instruction expansion pass
 ; CHECK-NEXT:       RISCV CHERIoT early bounds check elision pass
 ; CHECK-NEXT:       RISC-V Merge Base Offset
-; CHECK-NEXT:       RISCV CHERI Cleanup
 ; CHECK-NEXT:       RISC-V Insert VSETVLI pass
 ; CHECK-NEXT:       Cheri Get Address Elimination
 ; CHECK-NEXT:       RISC-V Insert Read/Write CSR Pass

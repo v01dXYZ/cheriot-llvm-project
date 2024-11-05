@@ -22,9 +22,9 @@
 ; CHECK-NEXT:       Expand large div/rem
 ; CHECK-NEXT:       Expand large fp convert
 ; CHECK-NEXT:       Expand Atomic instructions
-; CHECK-NEXT:    CHERIoT zero sret
-; CHECK-NEXT:    CHERI bound stack allocations
-; CHECK-NEXT:    FunctionPass Manager
+; CHECK-NEXT:       CHERIoT zero sret 
+; CHECK-NEXT:     CHERI bound stack allocations
+; CHECK-NEXT:     FunctionPass Manager
 ; CHECK-NEXT:       Module Verifier
 ; CHECK-NEXT:       Lower Garbage Collection Instructions
 ; CHECK-NEXT:       Shadow Stack GC Lowering
@@ -43,7 +43,6 @@
 ; CHECK-NEXT:       Finalize ISel and expand pseudo-instructions
 ; CHECK-NEXT:       Local Stack Slot Allocation
 ; CHECK-NEXT:       RISC-V Pre-RA pseudo instruction expansion pass
-; CHECK-NEXT:       RISCV CHERI Cleanup
 ; CHECK-NEXT:       RISC-V Insert VSETVLI pass
 ; CHECK-NEXT:       RISC-V Insert Read/Write CSR Pass
 ; CHECK-NEXT:       Eliminate PHI nodes for register allocation
