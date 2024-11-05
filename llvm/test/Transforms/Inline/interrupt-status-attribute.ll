@@ -1,4 +1,4 @@
-; RUN: opt -inline %s -S | FileCheck %s
+; RUN: opt -passes='cgscc(inline)' %s -S | FileCheck %s
 ; ModuleID = '../llvm-trunk-release/inline.c'
 target datalayout = "e-m:e-p:32:32-i64:64-n32-S128"
 target triple = "riscv32-unknown-unknown"
