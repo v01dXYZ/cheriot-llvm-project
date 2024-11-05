@@ -15970,9 +15970,16 @@ SDValue RISCVTargetLowering::LowerFormalArguments(
     else {
       ArgValue =
           unpackFromMemLoc(DAG, Chain, VA, DL, PtrVT, isCHERIoTCompartmentCall);
+
+      EVT VT = VA.getValVT();
+      if (VT.isScalableVector()) {
+        // A pointer to the scalable vector is stored on the stack rather than
+        // the vector itself.
+        VT = VA.getLocVT();
+      }
+
       stackArgumentSize =
-          std::max(stackArgumentSize,
-                   VA.getLocMemOffset() + VA.getValVT().getStoreSize());
+          std::max(stackArgumentSize, VA.getLocMemOffset() + VT.getStoreSize());
     }
 
     if (VA.getLocInfo() == CCValAssign::Indirect) {
