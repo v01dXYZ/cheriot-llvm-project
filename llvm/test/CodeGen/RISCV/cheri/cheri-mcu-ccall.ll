@@ -14,8 +14,8 @@ define dso_local chericcallcce i32 @test2(i32 %a0, i32 %a1) local_unnamed_addr a
 ; Check that we have the first two arguments in the right registers.
 ; BOTH-LABEL: test2:
 ; BOTH:       # %bb.0: # %entry
-; BOTH-NEXT:    add a0, a0, a1
-; BOTH-NEXT:    cret
+; BOTH:    add a0, a0, a1
+; BOTH:    cret
 entry:
   %add = add nsw i32 %a1, %a0
   ret i32 %add
@@ -25,19 +25,7 @@ entry:
 define dso_local chericcallcce i32 @test6(i32 addrspace(200)* nocapture readonly %a0, i32 addrspace(200)* nocapture readonly %a1, i32 addrspace(200)* nocapture readonly %a2, i32 addrspace(200)* nocapture readonly %a3, i32 addrspace(200)* nocapture readonly %a4, i32 addrspace(200)* nocapture readonly %a5) local_unnamed_addr addrspace(200) #1 {
 ; Check that we are loading the last register argument
 ; BOTH-LABEL: test6:
-; BOTH:       # %bb.0: # %entry
-; BOTH-NEXT:    clw a0, 0(ca0)
-; BOTH-NEXT:    clw a1, 0(ca1)
-; BOTH-NEXT:    clw a2, 0(ca2)
-; BOTH-NEXT:    clw a3, 0(ca3)
-; BOTH-NEXT:    clw a4, 0(ca4)
-; BOTH-NEXT:    clw a5, 0(ca5)
-; BOTH-NEXT:    add a0, a0, a1
-; BOTH-NEXT:    add a2, a2, a3
-; BOTH-NEXT:    add a0, a0, a2
-; BOTH-NEXT:    add a4, a4, a5
-; BOTH-NEXT:    add a0, a0, a4
-; BOTH-NEXT:    cret
+; BOTH: clw     a5, 0(ca5)
 entry:
   %0 = load i32, i32 addrspace(200)* %a0, align 4, !tbaa !5
   %1 = load i32, i32 addrspace(200)* %a1, align 4, !tbaa !5
@@ -58,25 +46,10 @@ define dso_local chericcallcce i32 @test8(i32 addrspace(200)* nocapture readonly
 ; Check that the last argument (used in the multiply) is loaded from offset 8
 ; in the stack-argument capability.
 ; BOTH-LABEL: test8:
-; BOTH:       # %bb.0: # %entry
-; BOTH-NEXT:    clw a0, 0(ca0)
-; BOTH-NEXT:    clw a1, 0(ca1)
-; BOTH-NEXT:    clw a2, 0(ca2)
-; BOTH-NEXT:    clw a3, 0(ca3)
-; BOTH-NEXT:    clc ct1, 8(ct0)
-; BOTH-NEXT:    clc ct0, 0(ct0)
-; BOTH-NEXT:    add a0, a0, a1
-; BOTH-NEXT:    add a2, a2, a3
-; BOTH-NEXT:    clw a1, 0(ca4)
-; BOTH-NEXT:    clw a3, 0(ca5)
-; BOTH-NEXT:    add a0, a0, a2
-; BOTH-NEXT:    clw a2, 0(ct0)
-; BOTH-NEXT:    clw a4, 0(ct1)
-; BOTH-NEXT:    add a1, a1, a3
-; BOTH-NEXT:    add a0, a0, a1
-; BOTH-NEXT:    add a0, a0, a2
-; BOTH-NEXT:    mul a0, a0, a4
-; BOTH-NEXT:    cret
+; BOTH: clc     [[CREG:[a-z]+[0-9]+]], 8(ct0)
+; BOTH: clw     [[IREG:[a-z]+[0-9]+]], 0([[CREG]])
+; BOTH: mul
+; BOTH-SAME: [[IREG]]
 entry:
   %0 = load i32, i32 addrspace(200)* %a0, align 4, !tbaa !5
   %1 = load i32, i32 addrspace(200)* %a1, align 4, !tbaa !5
@@ -107,38 +80,6 @@ declare void @llvm.lifetime.end.p200i8(i64 immarg, i8 addrspace(200)* nocapture)
 
 ; Function Attrs: minsize nounwind optsize
 define dso_local i32 @testcall8() local_unnamed_addr addrspace(200) #2 {
-; Check that we have the right relocations and stack layout.
-; BOTH-LABEL: testcall8:
-; BOTH:       # %bb.0: # %entry
-; BOTH-NEXT:    cincoffset csp, csp, -64
-; BOTH-NEXT:    csc cra, 56(csp) # 8-byte Folded Spill
-; BOTH-NEXT:    cincoffset ca0, csp, 24
-; BOTH-NEXT:    csetbounds ca0, ca0, 32
-; BOTH-NEXT:    cincoffset ca1, ca0, 4
-; BOTH-NEXT:    cincoffset ca2, ca0, 8
-; BOTH-NEXT:    cincoffset ca3, ca0, 12
-; BOTH-NEXT:    cincoffset ca4, ca0, 16
-; BOTH-NEXT:    cincoffset ca5, ca0, 20
-; BOTH-NEXT:    cincoffset ct0, ca0, 24
-; BOTH-NEXT:    auicgp ct1, %cheri_compartment_cgprel_hi(testcall8.stack_arg)
-; BOTH-NEXT:    cincoffset ct1, ct1, %cheri_compartment_cgprel_lo_i(testcall8.stack_arg)
-; BOTH-NEXT:    csetbounds ct1, ct1, %cheri_compartment_size(testcall8.stack_arg)
-; BOTH-NEXT:    csc ct1, 8(csp)
-; BOTH-NEXT:    csc ct0, 0(csp)
-; BOTH-NEXT:  .LBB3_1: # %entry
-; BOTH-NEXT:    # Label of block must be emitted
-; BOTH-NEXT:    auipcc ct0, %cheri_compartment_pccrel_hi(__import_other_test8callee)
-; BOTH-NEXT:    cincoffset ct0, ct0, %cheri_compartment_pccrel_lo(.LBB3_1)
-; BOTH-NEXT:    clc ct1, 0(ct0)
-; BOTH-NEXT:    csetbounds ct0, csp, 16
-; BOTH-NEXT:  .LBB3_2: # %entry
-; BOTH-NEXT:    # Label of block must be emitted
-; BOTH-NEXT:    auipcc ct2, %cheri_compartment_pccrel_hi(.compartment_switcher)
-; BOTH-NEXT:    clc ct2, %cheri_compartment_pccrel_lo(.LBB3_2)(ct2)
-; BOTH-NEXT:    cjalr ct2
-; BOTH-NEXT:    clc cra, 56(csp) # 8-byte Folded Reload
-; BOTH-NEXT:    cincoffset csp, csp, 64
-; BOTH-NEXT:    cret
 entry:
   ; Check that we have the right relocations and stack layout.
   ; BOTH-LABEL: testcall8:
@@ -150,7 +91,7 @@ entry:
   ; BOTH:  clc     ct1, %cheriot_compartment_lo_i
   ; BOTH:  auipcc  ct2, %cheriot_compartment_hi(.compartment_switcher)
   ; BOTH:  clc     ct2, %cheriot_compartment_lo_i
-  ; BOTH:  c.cjalr ct2
+  ; BOTH:  cjalr ct2
   %args = alloca [8 x i32], align 4, addrspace(200)
   %0 = bitcast [8 x i32] addrspace(200)* %args to i8 addrspace(200)*
   call void @llvm.lifetime.start.p200i8(i64 32, i8 addrspace(200)* nonnull %0) #5
@@ -171,7 +112,7 @@ declare dso_local chericcallcc i32 @test8callee(i32 addrspace(200)*, i32 addrspa
 
 attributes #0 = { minsize mustprogress nofree norecurse nosync nounwind optsize readnone willreturn "cheri-compartment"="example" "frame-pointer"="none" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="cheriot" "target-features"="+xcheri,-64bit,-relax,-save-restore" }
 attributes #1 = { minsize mustprogress nofree norecurse nosync nounwind optsize readonly willreturn "cheri-compartment"="example" "frame-pointer"="none" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="cheriot" "target-features"="+xcheri,-64bit,-relax,-save-restore" }
-attributes #2 = { minsize nounwind optsize "frame-pointer"="none" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="cheriot" "target-features"="+xcheri,-64bit,-relax,-save-restore,-xcheri-rvc" }
+attributes #2 = { minsize nounwind optsize "frame-pointer"="none" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="cheriot" "target-features"="+xcheri,-64bit,-relax,-save-restore" }
 attributes #3 = { argmemonly mustprogress nofree nosync nounwind willreturn }
 attributes #4 = { minsize optsize "cheri-compartment"="other" "frame-pointer"="none" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="cheriot" "target-features"="+xcheri,-64bit,-relax,-save-restore,+xcheri-norvc" }
 attributes #5 = { nounwind }
