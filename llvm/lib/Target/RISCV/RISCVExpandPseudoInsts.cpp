@@ -557,27 +557,34 @@ bool RISCVExpandPseudo::expandCapLoadLocalCap(
   if (ABI == RISCVABI::ABI_CHERIOT || ABI == RISCVABI::ABI_CHERIOT_BAREMETAL) {
     const DebugLoc DL = MBBI->getDebugLoc();
     const MachineOperand &Symbol = MBBI->getOperand(1);
-    const GlobalValue *GV = Symbol.getGlobal();
-    if (isa<Function>(GV) || cast<GlobalVariable>(GV)->isConstant()) {
-      if (auto *Fn = dyn_cast<Function>(GV)) {
-        auto CC = Fn->getCallingConv();
-        if ((getInterruptStatus(*Fn) != Interrupts::Inherit) ||
-            (CC == CallingConv::CHERI_CCall) ||
-            (CC == CallingConv::CHERI_CCallee)) {
-          insertLoadOfImportTable(MBB, MBBI, Fn, MBBI->getOperand(0).getReg());
-          NextMBBI = MBB.end();
-          MBBI->eraseFromParent();
-          return true;
+    if (Symbol.isGlobal()) {
+      const GlobalValue *GV = Symbol.getGlobal();
+      if (isa<Function>(GV) || cast<GlobalVariable>(GV)->isConstant()) {
+        if (auto *Fn = dyn_cast<Function>(GV)) {
+          auto CC = Fn->getCallingConv();
+          if ((getInterruptStatus(*Fn) != Interrupts::Inherit) ||
+              (CC == CallingConv::CHERI_CCall) ||
+              (CC == CallingConv::CHERI_CCallee)) {
+            insertLoadOfImportTable(MBB, MBBI, Fn, MBBI->getOperand(0).getReg());
+            NextMBBI = MBB.end();
+            MBBI->eraseFromParent();
+            return true;
+          }
         }
+        return expandAuipccInstPair(MBB, MBBI, NextMBBI,
+                                    RISCVII::MO_CHERIOT_COMPARTMENT_HI,
+                                    RISCV::CIncOffsetImm, InBounds);
       }
-      return expandAuipccInstPair(MBB, MBBI, NextMBBI,
-                                  RISCVII::MO_CHERIOT_COMPARTMENT_HI,
-                                  RISCV::CIncOffsetImm, InBounds);
+      return expandAuicgpInstPair(MBB, MBBI, NextMBBI, RISCV::CIncOffsetImm,
+                                  InBounds);
     }
-    return expandAuicgpInstPair(MBB, MBBI, NextMBBI, RISCV::CIncOffsetImm,
-                                InBounds);
+
+    return expandAuipccInstPair(MBB, MBBI, NextMBBI,
+                                RISCVII::MO_CHERIOT_COMPARTMENT_HI,
+                                RISCV::CIncOffsetImm);
   }
-  return expandAuipccInstPair(MBB, MBBI, NextMBBI, RISCVII::MO_PCREL_HI, RISCV::CIncOffsetImm);
+  return expandAuipccInstPair(MBB, MBBI, NextMBBI, RISCVII::MO_PCREL_HI,
+                              RISCV::CIncOffsetImm);
 }
 
 bool RISCVExpandPseudo::expandCapLoadGlobalCap(
