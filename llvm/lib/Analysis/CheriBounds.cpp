@@ -232,6 +232,9 @@ bool CheriNeedBoundsChecker::useNeedsBounds(const Use &U,
   case Instruction::PtrToInt:
     DBG_INDENTED("No need for stack bounds for ptrtoint: "; I->dump());
     return false;
+  case Instruction::InsertValue:
+    DBG_INDENTED("No need for stack bounds for insertvalue: "; I->dump());
+    return false;
   default:
     // Something else - be conservative and say it needs bounds.
     errs() << "DON'T know how to handle ";
