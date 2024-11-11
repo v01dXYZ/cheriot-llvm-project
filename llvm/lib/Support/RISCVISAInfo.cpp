@@ -437,6 +437,11 @@ void RISCVISAInfo::toFeatures(
     for (const RISCVSupportedExtension &Ext : SupportedExtensions) {
       if (Exts.count(Ext.Name))
         continue;
+
+      // cheriot: clang -cc1 does not support -i
+      if (StringRef{Ext.Name} == "i")
+        continue;
+
       Features.push_back(StrAlloc(Twine("-") + Ext.Name));
     }
 
