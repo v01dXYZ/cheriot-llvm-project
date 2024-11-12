@@ -2393,6 +2393,15 @@ static void handleCHERICompartmentName(Sema &S, Decl *D, const ParsedAttr &Attr)
   SourceLocation LiteralLoc;
   if (!S.checkStringLiteralArgumentAttr(Attr, 0, Str, &LiteralLoc))
     return;
+
+  if (D->getFunctionType() &&
+      D->getFunctionType()->getReturnType()->isVoidType())
+    S.Diag(Attr.getLoc(), diag::warn_attribute_void_function_method)
+        << Attr << 0;
+  else
+    D->addAttr(::new (S.Context) WarnUnusedResultAttr(
+        S.Context, Attr, "CHERI compartment call"));
+
   D->addAttr(::new (S.Context) CHERICompartmentNameAttr(S.Context, Attr, Str));
 }
 
