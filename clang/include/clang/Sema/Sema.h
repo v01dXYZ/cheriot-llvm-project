@@ -4717,8 +4717,16 @@ public:
     bool IgnoreTypeAttributes;
   };
 
+  enum DeclAttributeLocation {
+    DAL_Unspecified,
+    DAL_DeclSpec,
+    DAL_DeclChunk,
+    DAL_Decl,
+  };
+
   void ProcessDeclAttributeList(Scope *S, Decl *D,
                                 const ParsedAttributesView &AttrList,
+                                DeclAttributeLocation DAL = DAL_Unspecified,
                                 const ProcessDeclAttributeOptions &Options =
                                     ProcessDeclAttributeOptions());
   bool ProcessAccessDeclAttributeList(AccessSpecDecl *ASDecl,
