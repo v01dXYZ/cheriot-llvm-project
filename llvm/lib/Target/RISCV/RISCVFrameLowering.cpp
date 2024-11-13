@@ -524,20 +524,17 @@ void RISCVFrameLowering::emitPrologue(MachineFunction &MF,
       // x6 (t1) and x7 (t2) are unused in the prolog, so we can use them
       // here without any problems.
       // Check that the base is equal to the start
-      BuildMI(MBB, MBBI, DL, TII->get(RISCV::ADDI))
-          .addDef(RISCV::X6)
-          .addReg(RI->getSubReg(Reg, RISCV::sub_cap_addr))
-          .addImm(0);
+      unsigned XReg = RI->getSubReg(Reg, RISCV::sub_cap_addr);
       BuildMI(MBB, MBBI, DL, TII->get(RISCV::CGetBase))
           .addDef(RISCV::X7)
           .addReg(Reg);
       BuildMI(MBB, MBBI, DL, TII->get(RISCV::BNE))
-          .addReg(RISCV::X6)
+          .addReg(XReg)
           .addReg(RISCV::X7)
           .addMBB(failMBB);
       // Check that the base is above the current stack pointer.
       BuildMI(MBB, MBBI, DL, TII->get(RISCV::BLT))
-          .addReg(RISCV::X6)
+          .addReg(XReg)
           .addReg(RISCV::X2) // sp
           .addMBB(failMBB);
       // Check that the length is at least the expected size

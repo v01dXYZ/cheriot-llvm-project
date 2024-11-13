@@ -9,10 +9,9 @@ target triple = "riscv32-unknown-unknown"
 define dso_local chericcallcce noundef i32 @_Z22compartment_call_inneriiPKiiS0_ii(i32 noundef %0, i32 noundef %1, ptr addrspace(200) nocapture noundef readnone %2, i32 noundef %3, ptr addrspace(200) nocapture noundef readnone %4, i32 noundef %5, i32 noundef %6) local_unnamed_addr addrspace(200) #0 {
 ; CHECK-LABEL: _Z22compartment_call_inneriiPKiiS0_ii:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    mv t1, t0
 ; CHECK-NEXT:    cgetbase t2, ct0
-; CHECK-NEXT:    bne t1, t2, .LBB0_1
-; CHECK-NEXT:    blt t1, sp, .LBB0_1
+; CHECK-NEXT:    bne t0, t2, .LBB0_1
+; CHECK-NEXT:    blt t0, sp, .LBB0_1
 ; CHECK-NEXT:    cgetlen t1, ct0
 ; CHECK-NEXT:    li t2, 4
 ; CHECK-NEXT:    blt t1, t2, .LBB0_1

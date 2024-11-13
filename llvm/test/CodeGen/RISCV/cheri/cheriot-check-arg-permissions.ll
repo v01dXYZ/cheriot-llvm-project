@@ -18,11 +18,10 @@ define dso_local chericcallcce void @_Z4ret2v(%struct.ret addrspace(200)* noalia
 entry:
   ; CHECK-LABEL: _Z4ret2v:
   ; Make sure that the base points to the current address
-  ; CHECK:      mv        t1, a0
   ; CHECK:      cgetbase        t2, ca0
-  ; CHECK:      bne     t1, t2,
+  ; CHECK:      bne     a0, t2,
   ; Make sure that the base is above the current stack pointer
-  ; CHECK:      blt     t1, sp,
+  ; CHECK:      blt     a0, sp,
   ; Make sure the length is sufficient for the returned structure
   ; CHECK:      cgetlen t1, ca0
   ; CHECK:      li    t2, 16
@@ -47,11 +46,10 @@ define dso_local chericcallcce i32 @_Z7bigargsiiiiiiii(i32 %a0, i32 %a1, i32 %a2
 entry:
   ; CHECK-LABEL: _Z7bigargsiiiiiiii:
   ; Make sure that the base points to the current address
-  ; CHECK:      mv        t1, t0
   ; CHECK:      cgetbase        t2, ct0
-  ; CHECK:      bne     t1, t2,
+  ; CHECK:      bne     t0, t2,
   ; Make sure that the base is above the current stack pointer
-  ; CHECK:      blt     t1, sp,
+  ; CHECK:      blt     t0, sp,
   ; Make sure the length is sufficient for the returned structure
   ; CHECK:      cgetlen t1, ct0
   ; CHECK:      li    t2, 8
