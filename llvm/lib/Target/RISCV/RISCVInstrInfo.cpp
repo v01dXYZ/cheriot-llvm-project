@@ -2230,6 +2230,12 @@ bool RISCVInstrInfo::isFunctionSafeToOutlineFrom(
     MachineFunction &MF, bool OutlineFromLinkOnceODRs) const {
   const Function &F = MF.getFunction();
 
+  // XXX cheriot: Disable machine outliner
+  RISCVABI::ABI MFABI = MF.getSubtarget<RISCVSubtarget>().getTargetABI();
+  bool IsCheriot = (MFABI == RISCVABI::ABI_CHERIOT) || (MFABI == RISCVABI::ABI_CHERIOT_BAREMETAL);
+  if (IsCheriot)
+    return false;
+
   // Can F be deduplicated by the linker? If it can, don't outline from it.
   if (!OutlineFromLinkOnceODRs && F.hasLinkOnceODRLinkage())
     return false;
