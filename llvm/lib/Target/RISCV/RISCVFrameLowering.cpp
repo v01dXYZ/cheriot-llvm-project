@@ -532,7 +532,7 @@ void RISCVFrameLowering::emitPrologue(MachineFunction &MF,
           .addDef(RISCV::X7)
           .addReg(Reg);
       BuildMI(MBB, MBBI, DL, TII->get(RISCV::BNE))
-          .addDef(RISCV::X6)
+          .addReg(RISCV::X6)
           .addReg(RISCV::X7)
           .addMBB(failMBB);
       // Check that the base is above the current stack pointer.
