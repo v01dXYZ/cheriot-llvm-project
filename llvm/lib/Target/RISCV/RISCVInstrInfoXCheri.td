@@ -1861,7 +1861,7 @@ def PseudoCBR : Pseudo<(outs), (ins simm21_lsb0_jal:$imm20), [(br bb:$imm20)]>,
 
 let isCall = 1, Defs = [C1] in
 let isBarrier = 1, isBranch = 1, isIndirectBranch = 1, isTerminator = 1 in
-def PseudoCBRIND : Pseudo<(outs), (ins GPCR:$rs1, simm12:$imm12), []>,
+def PseudoCBRIND : Pseudo<(outs), (ins GPCRNoC0C1:$rs1, simm12:$imm12), []>,
                    PseudoInstExpansion<(CJALR C0, GPCR:$rs1, simm12:$imm12)>;
 
 def : Pat<(brind GPCR:$rs1), (PseudoCBRIND GPCR:$rs1, 0)>;
@@ -1913,8 +1913,8 @@ def : Pat<(riscv_cap_library_call GPCR:$func),
 
 let Predicates = [HasCheri, IsCapMode, IsPureCapABI],
     isCall = 1, Defs = [C1] in
-def PseudoCCALLIndirect : Pseudo<(outs), (ins GPCR:$rs1),
-                                 [(riscv_cap_call GPCR:$rs1)]>,
+def PseudoCCALLIndirect : Pseudo<(outs), (ins GPCRNoC0C1:$rs1),
+                                 [(riscv_cap_call GPCRNoC0C1:$rs1)]>,
                           PseudoInstExpansion<(CJALR C1, GPCR:$rs1, 0)>;
 
 let Predicates = [HasCheri, IsCapMode, IsPureCapABI],
@@ -1931,8 +1931,8 @@ def PseudoCTAIL : Pseudo<(outs), (ins cap_call_symbol:$dst), []> {
 
 let Predicates = [HasCheri, IsCapMode, IsPureCapABI],
     isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1, Uses = [C2] in
-def PseudoCTAILIndirect : Pseudo<(outs), (ins GPCRTC:$rs1),
-                                 [(riscv_cap_tail GPCRTC:$rs1)]>,
+def PseudoCTAILIndirect : Pseudo<(outs), (ins GPCRNoC0C1:$rs1),
+                                 [(riscv_cap_tail GPCRNoC0C1:$rs1)]>,
                           PseudoInstExpansion<(CJALR C0, GPCR:$rs1, 0)>;
 
 let Predicates = [HasCheri, IsCapMode, IsPureCapABI] in {

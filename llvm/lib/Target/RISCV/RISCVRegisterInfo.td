@@ -252,6 +252,10 @@ def GPCRNoC0 : RegisterClass<"RISCV", [CLenVT], 64, (sub GPCR, C0)> {
   let RegInfos = CLenRI;
 }
 
+def GPCRNoC0C1 : RegisterClass<"RISCV", [CLenVT], 64, (sub GPCRNoC0, C1)> {
+  let RegInfos = CLenRI;
+}
+
 def GPRNoX0X2 : GPRRegisterClass<(sub GPR, X0, X2)>;
 
 // Don't use X1 or X5 for JALR since that is a hint to pop the return address
