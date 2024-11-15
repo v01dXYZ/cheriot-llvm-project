@@ -1883,13 +1883,15 @@ def PseudoCCALL : Pseudo<(outs), (ins cap_call_symbol:$func), []> {
   let AsmString = "ccall\t$func";
 }
 
-// PseudoCompartmentCall Expands to AUIPCC, CLC_64, C_CJALR (10 bytes).
+// The PseudoCompartmentCall of expands to AUIPCC, CLC_64, C_CJALR (10 bytes),
+// but the setup to obtain the callee capability from an import table can
+// require up to 8 additional bytes.
 let Predicates = [HasCheri, IsCapMode],
-    isCall = 1, Defs = [C1], isCodeGenOnly = 1, Size = 10 in
+    isCall = 1, Defs = [C1], isCodeGenOnly = 1, Size = 18 in
 def PseudoCompartmentCall : Pseudo<(outs), (ins cap_call_symbol:$func), []>;
 
 let Predicates = [HasCheri, IsCapMode],
-    isCall = 1, Defs = [C1], isCodeGenOnly = 1 in
+    isCall = 1, Defs = [C1], isCodeGenOnly = 1, Size = 10 in
 def PseudoLibraryCall : Pseudo<(outs), (ins cap_call_symbol:$func), []>;
 
 let Predicates = [HasCheri, IsCapMode, IsPureCapABI] in {
