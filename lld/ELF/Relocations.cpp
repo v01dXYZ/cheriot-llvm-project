@@ -968,7 +968,6 @@ static bool canDefineSymbolInExecutable(Symbol &sym) {
 bool RelocationScanner::isStaticLinkTimeConstant(RelExpr e, RelType type,
                                                  const Symbol &sym,
                                                  uint64_t relOff) const {
-  // XXX R_DTPREL, *TLS*?
   // These expressions always compute a constant
   if (oneof<R_GOTPLT, R_GOT_OFF, R_RELAX_HINT,
             R_CHERI_CAPABILITY_TABLE_INDEX,
