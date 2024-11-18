@@ -84,7 +84,6 @@ InputSectionBase::InputSectionBase(InputFile *file, uint64_t flags,
 // That flag doesn't make sense in an executable.
 static uint64_t getFlags(uint64_t flags) {
   flags &= ~(uint64_t)SHF_INFO_LINK;
-  // XXX config->relocatable includes config->compartment so the check is redunduant?
   if (!config->relocatable || config->compartment)
     flags &= ~(uint64_t)SHF_GROUP;
   return flags;
