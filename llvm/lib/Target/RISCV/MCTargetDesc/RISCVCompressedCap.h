@@ -15,14 +15,17 @@
 
 namespace llvm {
 
+class MCSubtargetInfo;
+
 namespace RISCVCompressedCap {
-uint64_t getRepresentableLength(uint64_t Length, bool IsRV64);
+uint64_t getRepresentableLength(uint64_t Length, const MCSubtargetInfo &);
 
-uint64_t getAlignmentMask(uint64_t Length, bool IsRV64);
+uint64_t getAlignmentMask(uint64_t Length, const MCSubtargetInfo &);
 
-TailPaddingAmount getRequiredTailPadding(uint64_t Size, bool IsRV64);
+TailPaddingAmount getRequiredTailPadding(uint64_t Size,
+                                         const MCSubtargetInfo &);
 
-Align getRequiredAlignment(uint64_t Size, bool IsRV64);
+Align getRequiredAlignment(uint64_t Size, const MCSubtargetInfo &);
 } // namespace RISCVCompressedCap
 } // namespace llvm
 #endif
