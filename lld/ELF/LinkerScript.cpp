@@ -1135,12 +1135,12 @@ void LinkerScript::assignOffsets(OutputSection *sec) {
     if (capAlignment > 1) {
       capAlignment = std::max<uint64_t>(capAlignment, sec->addralign);
       sec->size = alignTo(sec->size, capAlignment);
-      /// XXX was advance(0, capAlignment), not convinced this is correct
       uint64_t start = isTbss ? state->tbssAddr : dot;
       start = alignTo(start, capAlignment);
       if (isTbss)
           state->tbssAddr = start;
-      dot = start;
+      else
+        dot = start;
     }
   }
 }
