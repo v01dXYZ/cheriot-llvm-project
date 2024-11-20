@@ -87,6 +87,11 @@ public:
     MCountName = "_mcount";
     HasFloat16 = true;
     HasStrictFP = true;
+
+    if (Triple.getSubArch() == llvm::Triple::RISCV32SubArch_cheriot_v1) {
+      CPU = "cheriot";
+      ABI = llvm::Triple::CheriotRTOS ? "cheriot" : "cheriot-baremetal";
+    }
   }
 
   bool setCPU(const std::string &Name) override {

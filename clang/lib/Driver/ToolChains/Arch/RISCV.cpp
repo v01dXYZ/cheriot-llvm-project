@@ -15,6 +15,7 @@
 #include "clang/Driver/Options.h"
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/Option/ArgList.h"
+#include "llvm/Support/Errc.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/RISCVISAInfo.h"
 #include "llvm/Support/raw_ostream.h"
@@ -239,6 +240,13 @@ StringRef riscv::getRISCVABI(const ArgList &Args, const llvm::Triple &Triple) {
   // rv64g | rv64*d -> lp64d
   // rv64* -> lp64
   StringRef Arch = getRISCVArch(Args, Triple);
+  if (Triple.getSubArch() == llvm::Triple::RISCV32SubArch_cheriot_v1) {
+    llvm::Triple::OSType OS = Triple.getOS();
+    if (OS == llvm::Triple::CheriotRTOS)
+      return "cheriot";
+    else if (OS == llvm::Triple::UnknownOS)
+      return "cheriot-baremetal";
+  }
 
   auto ParseResult = llvm::RISCVISAInfo::parseArchString(
       Arch, /* EnableExperimentalExtension */ true);
@@ -336,6 +344,8 @@ StringRef riscv::getRISCVArch(const llvm::opt::ArgList &Args,
   // We deviate from GCC's defaults here:
   // - On `riscv{XLEN}-unknown-elf` we default to `rv{XLEN}imac`
   // - On all other OSs we use `rv{XLEN}imafdc` (equivalent to `rv{XLEN}gc`)
+  if (Triple.getSubArch() == llvm::Triple::RISCV32SubArch_cheriot_v1)
+    return "rv32emc_xcheri";
   if (Triple.isRISCV32()) {
     if (Triple.getOS() == llvm::Triple::UnknownOS)
       return "rv32imac";
@@ -364,6 +374,9 @@ std::string riscv::getRISCVTargetCPU(const llvm::opt::ArgList &Args,
 
   if (!CPU.empty())
     return CPU;
+
+  if (Triple.getSubArch() == llvm::Triple::RISCV32SubArch_cheriot_v1)
+    return "cheriot";
 
   return Triple.isRISCV64() ? "generic-rv64" : "generic-rv32";
 }

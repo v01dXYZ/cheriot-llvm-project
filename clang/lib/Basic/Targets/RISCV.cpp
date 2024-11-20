@@ -241,9 +241,9 @@ void RISCVTargetInfo::getTargetDefines(const LangOptions &Opts,
 
     // Macros for CHERIoT in the default and bare-metal ABIs.
     if (ABI == "cheriot" || ABI == "cheriot-baremetal")
-      Builder.defineMacro("__CHERIOT__", "20241212");
+      Builder.defineMacro("__CHERIOT__", "20241214");
     if (ABI == "cheriot-baremetal")
-      Builder.defineMacro("__CHERIOT_BAREMETAL__", "20241212");
+      Builder.defineMacro("__CHERIOT_BAREMETAL__", "20241214");
 
     Builder.defineMacro("__riscv_clen", Twine(getCHERICapabilityWidth()));
     // TODO: _MIPS_CAP_ALIGN_MASK equivalent?
@@ -300,6 +300,14 @@ bool RISCVTargetInfo::initFeatureMap(
     XLen = 64;
   } else {
     Features["32bit"] = true;
+  }
+
+  if (getTriple().getSubArch() == llvm::Triple::RISCV32SubArch_cheriot_v1) {
+    Features["xcheri"] = true;
+    Features["cap-mode"] = true;
+    Features["c"] = true;
+    Features["e"] = true;
+    Features["m"] = true;
   }
 
   auto ParseResult = llvm::RISCVISAInfo::parseFeatures(XLen, FeaturesVec);
