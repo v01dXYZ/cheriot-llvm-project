@@ -126,15 +126,6 @@ static Reloc::Model getEffectiveRelocModel(const Triple &TT,
   return RM.value_or(Reloc::Static);
 }
 
-static CodeModel::Model getEffectiveCodeModel(std::optional<CodeModel::Model> CM,
-                                              CodeModel::Model Default,
-                                              const TargetOptions &Options) {
-  if ((Options.MCOptions.ABIName == "cheriot") && CM.has_value() &&
-      (*CM == CodeModel::Tiny))
-    return *CM;
-  return getEffectiveCodeModel(CM, Default);
-}
-
 RISCVTargetMachine::RISCVTargetMachine(const Target &T, const Triple &TT,
                                        StringRef CPU, StringRef FS,
                                        const TargetOptions &Options,
@@ -143,8 +134,7 @@ RISCVTargetMachine::RISCVTargetMachine(const Target &T, const Triple &TT,
                                        CodeGenOpt::Level OL, bool JIT)
     : LLVMTargetMachine(T, computeDataLayout(TT, FS, Options), TT, CPU, FS,
                         Options, getEffectiveRelocModel(TT, RM),
-                        ::getEffectiveCodeModel(CM, CodeModel::Small, Options),
-                        OL),
+                        getEffectiveCodeModel(CM, CodeModel::Small), OL),
       TLOF(std::make_unique<RISCVELFTargetObjectFile>()) {
   initAsmInfo();
 
