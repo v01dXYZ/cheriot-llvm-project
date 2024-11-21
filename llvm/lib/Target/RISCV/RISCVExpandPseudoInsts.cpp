@@ -449,10 +449,9 @@ bool RISCVExpandPseudo::expandAuicgpInstPair(
   DebugLoc DL = MI.getDebugLoc();
   auto *MF = MBB.getParent();
 
-  bool HasTmpReg = MI.getNumOperands() > 2;
+  assert(MI.getNumOperands() <= 2);
   Register DestReg = MI.getOperand(0).getReg();
-  Register TmpReg = MI.getOperand(HasTmpReg ? 1 : 0).getReg();
-  const MachineOperand &Symbol = MI.getOperand(HasTmpReg ? 2 : 1);
+  const MachineOperand &Symbol = MI.getOperand(1);
 
   auto *NewMBB = MBB.getParent()->CreateMachineBasicBlock(MBB.getBasicBlock());
 

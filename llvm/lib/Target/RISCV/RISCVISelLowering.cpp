@@ -13870,7 +13870,6 @@ void RISCVTargetLowering::computeKnownBitsForTargetNode(const SDValue Op,
          " is a target node!");
 
   Known.resetAll();
-  bool IsRV64 = Subtarget.is64Bit();
   switch (Opc) {
   default: break;
   case RISCVISD::SELECT_CC: {
