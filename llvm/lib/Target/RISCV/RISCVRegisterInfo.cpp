@@ -120,7 +120,8 @@ BitVector RISCVRegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   markSuperRegs(Reserved, RISCV::X0); // zero
   markSuperRegs(Reserved, RISCV::X2); // sp
   markSuperRegs(Reserved, RISCV::X3); // gp
-  markSuperRegs(Reserved, RISCV::X4); // tp
+  if (STI.getTargetABI() != RISCVABI::ABI_CHERIOT && STI.getTargetABI() != RISCVABI::ABI_CHERIOT_BAREMETAL)
+    markSuperRegs(Reserved, RISCV::X4); // tp
   if (TFI->hasFP(MF))
     markSuperRegs(Reserved, RISCV::X8); // fp
   // Reserve the base register if we need to realign the stack and allocate
@@ -131,7 +132,8 @@ BitVector RISCVRegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   markSuperRegs(Reserved, RISCV::C0); // cnull
   markSuperRegs(Reserved, RISCV::C2); // csp
   markSuperRegs(Reserved, RISCV::C3); // cgp
-  markSuperRegs(Reserved, RISCV::C4); // ctp
+  if (STI.getTargetABI() != RISCVABI::ABI_CHERIOT && STI.getTargetABI() != RISCVABI::ABI_CHERIOT_BAREMETAL)
+    markSuperRegs(Reserved, RISCV::C4); // ctp
   if (TFI->hasFP(MF))
     markSuperRegs(Reserved, RISCV::C8); // cfp
   if (TFI->hasBP(MF))
