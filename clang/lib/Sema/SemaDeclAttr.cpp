@@ -2388,17 +2388,49 @@ static void handleCHERIMethodSuffix(Sema &S, Decl *D, const ParsedAttr &Attr) {
   D->addAttr(::new (S.Context) CHERIMethodSuffixAttr(S.Context, Attr, Str));
 }
 
-static void handleCHERICompartmentName(Sema &S, Decl *D, const ParsedAttr &Attr) {
+static void handleCHERICompartmentName(Sema &S, Decl *D, const ParsedAttr &Attr,
+                                       Sema::DeclAttributeLocation DAL) {
+  if (DAL != Sema::DAL_DeclSpec && DAL != Sema::DAL_Unspecified)
+    return;
+
+  // cheri_compartment is both:
+  //
+  // * a Declaration attribute: marks the function as a compartment entry point
+  // * a Function Type attribute: affects the calling convention
+  //
+  // That's the reason why we don't short-circuit with hasDeclarator
+  // (as other handlers do).
+
   StringRef Str;
   SourceLocation LiteralLoc;
   if (!S.checkStringLiteralArgumentAttr(Attr, 0, Str, &LiteralLoc))
     return;
 
-  if (D->getFunctionType() &&
-      D->getFunctionType()->getReturnType()->isVoidType())
-    S.Diag(Attr.getLoc(), diag::warn_attribute_void_function_method)
-        << Attr << 0;
-  else
+  // cheri_compartment is considered as function type attribute
+
+  const auto *FD = dyn_cast<FunctionDecl>(D);
+
+  if (FD && FD->getReturnType()->isVoidType()) {
+    S.Diag(Attr.getLoc(), diag::warn_cheri_compartment_void_return_type);
+
+    const TypeSourceInfo *TSI = FD->getTypeSourceInfo();
+    TypeLoc TL = TSI->getTypeLoc().IgnoreParens();
+
+    // ignore function type attributes
+    while (auto ATL = TL.getAs<AttributedTypeLoc>())
+      TL = ATL.getModifiedLoc();
+
+    if (auto FTL = TL.getAs<FunctionTypeLoc>()) {
+      SourceRange SR = FTL.getReturnLoc().getSourceRange();
+      S.Diag(SR.getBegin(), diag::note_cheri_compartment_void_return_type)
+          << FixItHint::CreateReplacement(SR, "int");
+    }
+    //    FunctionTypeLoc FTL = FD->getFunctionTypeLoc();
+
+    //    TypeLoc RL = FTL.getReturnLoc();
+    //    SourceRange SR = FD->getReturnTypeSourceRange();
+
+  } else
     D->addAttr(::new (S.Context) WarnUnusedResultAttr(
         S.Context, Attr, "CHERI compartment call"));
 
@@ -8941,7 +8973,8 @@ static bool MustDelayAttributeArguments(const ParsedAttr &AL) {
 /// silently ignore it if a GNU attribute.
 static void
 ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
-                     const Sema::ProcessDeclAttributeOptions &Options) {
+                     const Sema::ProcessDeclAttributeOptions &Options,
+                     Sema::DeclAttributeLocation DAL = Sema::DAL_Unspecified) {
   if (AL.isInvalid() || AL.getKind() == ParsedAttr::IgnoredAttribute)
     return;
 
@@ -9450,7 +9483,7 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
     handleCHERIMethodSuffix(S, D, AL);
     break;
   case ParsedAttr::AT_CHERICompartmentName:
-    handleCHERICompartmentName(S, D, AL);
+    handleCHERICompartmentName(S, D, AL, DAL);
     break;
   case ParsedAttr::AT_InterruptState:
     handleInterruptState(S, D, AL);
@@ -9764,12 +9797,13 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
 /// attribute list to the specified decl, ignoring any type attributes.
 void Sema::ProcessDeclAttributeList(
     Scope *S, Decl *D, const ParsedAttributesView &AttrList,
+    Sema::DeclAttributeLocation DAL,
     const ProcessDeclAttributeOptions &Options) {
   if (AttrList.empty())
     return;
 
   for (const ParsedAttr &AL : AttrList)
-    ProcessDeclAttribute(*this, S, D, AL, Options);
+    ProcessDeclAttribute(*this, S, D, AL, Options, DAL);
 
   // FIXME: We should be able to handle these cases in TableGen.
   // GCC accepts
@@ -10020,6 +10054,7 @@ void Sema::ProcessDeclAttributes(Scope *S, Decl *D, const Declarator &PD) {
   // Apply decl attributes from the DeclSpec if present.
   if (!PD.getDeclSpec().getAttributes().empty()) {
     ProcessDeclAttributeList(S, D, PD.getDeclSpec().getAttributes(),
+                             DAL_DeclSpec,
                              ProcessDeclAttributeOptions()
                                  .WithIncludeCXX11Attributes(false)
                                  .WithIgnoreTypeAttributes(true));
@@ -10031,13 +10066,14 @@ void Sema::ProcessDeclAttributes(Scope *S, Decl *D, const Declarator &PD) {
   // when X is a decl attribute.
   for (unsigned i = 0, e = PD.getNumTypeObjects(); i != e; ++i) {
     ProcessDeclAttributeList(S, D, PD.getTypeObject(i).getAttrs(),
+                             DAL_DeclChunk,
                              ProcessDeclAttributeOptions()
                                  .WithIncludeCXX11Attributes(false)
                                  .WithIgnoreTypeAttributes(true));
   }
 
   // Finally, apply any attributes on the decl itself.
-  ProcessDeclAttributeList(S, D, PD.getAttributes());
+  ProcessDeclAttributeList(S, D, PD.getAttributes(), DAL_Decl);
 
   // Apply additional attributes specified by '#pragma clang attribute'.
   AddPragmaAttributes(S, D);

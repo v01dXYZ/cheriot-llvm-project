@@ -2336,6 +2336,11 @@ def note_in_reference_temporary_list_initializer : Note<
   "list-initialize this reference">;
 def note_var_fixit_add_initialization : Note<
   "initialize the variable %0 to silence this warning">;
+def warn_cheri_compartment_void_return_type : Warning <
+  "void return on a cross-compartment call make it impossible for callers to detect failure">;
+def note_cheri_compartment_void_return_type : Note<"replace void return type with int">;
+def warn_cheri_compartment_return_void_or_falloff : Warning <
+  "Cross-compartement calls that always succeed should return 0 instead">;
 def note_uninit_fixit_remove_cond : Note<
   "remove the %select{'%1' if its condition|condition if it}0 "
   "is always %select{false|true}2">;
