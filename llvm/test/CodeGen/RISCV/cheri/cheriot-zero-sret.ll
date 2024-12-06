@@ -43,7 +43,7 @@ entry:
   call void @llvm.lifetime.start.p200i8(i64 128, i8 addrspace(200)* nonnull %0) #3
   ; CHECK-LABEL: _Z1iv:
   ; Check that we do a proper memset for a big struct.
-  ; CHECK: 	auipcc	ct2, %cheriot_compartment_hi(__library_import_libcalls__Z6memsetPvij)
+  ; CHECK: 	auipcc	ct2, %cheriot_compartment_hi(__library_import_libcalls_memset)
   notail call chericcallcc void @_Z1gv(%struct.Big addrspace(200)* nonnull sret(%struct.Big) align 1 %ref.tmp) #4
   %foo.sroa.0.0.copyload = load i8, i8 addrspace(200)* %0, align 1, !tbaa.struct !9
   call void @llvm.lifetime.end.p200i8(i64 128, i8 addrspace(200)* nonnull %0) #3
