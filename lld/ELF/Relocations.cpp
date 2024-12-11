@@ -771,6 +771,39 @@ static void reportUndefinedSymbol(const UndefinedDiag &undef,
     }
   }
 
+  // Provide a spelling-like hint when we fail to resolve a local symbol but
+  // find a corresponding export in another compartment.
+  // FIXME: Is there a better way to test for cheriot here?
+  if (config->isCheriAbi && config->emachine == EM_RISCV &&
+      config->capabilitySize == 8) {
+    StringRef SymName = sym.getName();
+    for (auto GlobalSymbol : symtab.getSymbols()) {
+      if (!GlobalSymbol->isGlobal())
+        continue;
+      if (!GlobalSymbol->isDefined())
+        continue;
+
+      StringRef GlobalName = GlobalSymbol->getName();
+      if (!GlobalName.consume_front("__export_"))
+        continue;
+      size_t functionNameStart = GlobalName.find("__Z");
+      if (functionNameStart == StringRef::npos)
+        continue;
+
+      StringRef GlobalCompartmentName =
+          GlobalName.take_front(functionNameStart);
+      StringRef GlobalFunctionName = GlobalName.substr(functionNameStart + 1);
+      if (GlobalFunctionName == SymName) {
+        msg += "\n>>> did you mean the \"" + toString(sym) +
+               "\" export from compartment \"" +
+               toString(GlobalCompartmentName) + "\"?";
+        msg += "\n>>> defined in: " + toString(GlobalSymbol->file);
+        msg += "\n>>> the declaration may be missing a compartment annotation";
+        break;
+      }
+    }
+  }
+
   if (sym.getName().starts_with("_ZTV"))
     msg +=
         "\n>>> the vtable symbol may be undefined because the class is missing "
