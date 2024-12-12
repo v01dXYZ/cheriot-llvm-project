@@ -2413,23 +2413,10 @@ static void handleCHERICompartmentName(Sema &S, Decl *D, const ParsedAttr &Attr,
   if (FD && FD->getReturnType()->isVoidType()) {
     S.Diag(Attr.getLoc(), diag::warn_cheri_compartment_void_return_type);
 
-    const TypeSourceInfo *TSI = FD->getTypeSourceInfo();
-    TypeLoc TL = TSI->getTypeLoc().IgnoreParens();
-
-    // ignore function type attributes
-    while (auto ATL = TL.getAs<AttributedTypeLoc>())
-      TL = ATL.getModifiedLoc();
-
-    if (auto FTL = TL.getAs<FunctionTypeLoc>()) {
-      SourceRange SR = FTL.getReturnLoc().getSourceRange();
+    if (SourceRange SR = FD->getReturnTypeSourceRange(); SR.isValid()) {
       S.Diag(SR.getBegin(), diag::note_cheri_compartment_void_return_type)
           << FixItHint::CreateReplacement(SR, "int");
     }
-    //    FunctionTypeLoc FTL = FD->getFunctionTypeLoc();
-
-    //    TypeLoc RL = FTL.getReturnLoc();
-    //    SourceRange SR = FD->getReturnTypeSourceRange();
-
   } else
     D->addAttr(::new (S.Context) WarnUnusedResultAttr(
         S.Context, Attr, "CHERI compartment call"));
