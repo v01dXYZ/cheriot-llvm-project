@@ -393,8 +393,8 @@ let mayTrap = 1 in {
 let defsCanBeSealed = 1 in
 def CSeal           : Cheri_rr<0xb, "cseal", GPCR, GPCR>;
 def CUnseal         : Cheri_rr<0xc, "cunseal", GPCR, GPCR>;
-def CAndPerm        : Cheri_rr<0xd, "candperm">;
 } // let mayTrap = 1
+def CAndPerm        : Cheri_rr<0xd, "candperm">;
 def CSetFlags       : Cheri_rr<0xe, "csetflags">;
 def CSetOffset      : Cheri_rr<0xf, "csetoffset">;
 def CSetAddr        : Cheri_rr<0x10, "csetaddr">;
