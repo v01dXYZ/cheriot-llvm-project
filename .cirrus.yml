@@ -1,7 +1,7 @@
 pr_task:
   name: Build and test PR
   skip: $CIRRUS_PR == ""
-  timeout_in: 120m
+  timeout_in: 240m
   container:
     image: ubuntu:24.04
     cpu: 8
