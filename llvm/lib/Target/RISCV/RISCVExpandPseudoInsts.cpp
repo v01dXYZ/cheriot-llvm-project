@@ -552,7 +552,8 @@ bool RISCVExpandPseudo::expandCapLoadLocalCap(
   if (ABI == RISCVABI::ABI_CHERIOT || ABI == RISCVABI::ABI_CHERIOT_BAREMETAL) {
     const DebugLoc DL = MBBI->getDebugLoc();
     const MachineOperand &Symbol = MBBI->getOperand(1);
-    if (!Symbol.isGlobal())
+    if (!Symbol.isGlobal() ||
+        Symbol.getTargetFlags() == RISCVII::MO_JUMP_TABLE_BASE)
       return expandAuipccInstPair(MBB, MBBI, NextMBBI,
                                   RISCVII::MO_CHERIOT_COMPARTMENT_HI,
                                   RISCV::CIncOffsetImm);
