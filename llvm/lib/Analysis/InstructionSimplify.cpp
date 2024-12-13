@@ -6640,6 +6640,12 @@ static Value *simplifyBinaryIntrinsic(Function *F, Value *Op0, Value *Op1,
     }
     break;
   }
+  case Intrinsic::cheri_cap_perms_and:
+    // perms_and(perms_and(C, X), X) -> perms_ander(C, X)
+    if (match(Op0, m_Intrinsic<Intrinsic::cheri_cap_perms_and>(
+                       m_Value(), m_Specific(Op1))))
+      return Op0;
+    break;
   case Intrinsic::uadd_sat:
     // sat(MAX + X) -> MAX
     // sat(X + MAX) -> MAX

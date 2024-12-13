@@ -2676,6 +2676,25 @@ Instruction *InstCombinerImpl::visitCallInst(CallInst &CI) {
       return I;
     break;
 
+  case Intrinsic::cheri_cap_perms_and: {
+    // When a when perms_and is applied to another perms_and, both with constant
+    // perms operands, we can constant fold them together.
+    auto C1 = dyn_cast<ConstantInt>(II->getArgOperand(1));
+    Value *Cap;
+    ConstantInt *C2;
+    if (C1 &&
+        match(II->getArgOperand(0), m_Intrinsic<Intrinsic::cheri_cap_perms_and>(
+                                        m_Value(Cap), m_ConstantInt(C2)))) {
+      if (C1->getType() == C2->getType()) {
+        auto C3 = ConstantExpr::getAnd(C1, C2);
+        replaceUse(II->getOperandUse(0), Cap);
+        replaceUse(II->getOperandUse(1), C3);
+        return II;
+      }
+    }
+
+    break;
+  }
 
   case Intrinsic::ldexp: {
     // ldexp(ldexp(x, a), b) -> ldexp(x, a + b)
