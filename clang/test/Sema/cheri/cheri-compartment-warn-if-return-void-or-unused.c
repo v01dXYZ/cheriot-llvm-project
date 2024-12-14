@@ -5,13 +5,13 @@
 //
 
 //  -fdiagnostics-fixit-info
-__attribute__((cheri_compartment("example"))) void void_return_type_f(int a) // expected-warning{{void return on a cross-compartment call make it impossible for callers to detect failure}} expected-note{{replace void return type with int}}
+__attribute__((cheri_compartment("example"))) void void_return_type_f(int a) // expected-warning{{void return on a cross-compartment call makes it impossible for callers to detect failure}} expected-note{{replace void return type with int}}
 {
   if (a) {
     /// CHECK: fix-it:"{{.*}}":{[[@LINE+1]]:[[COL:[0-9]+]]-[[@LINE+1]]:[[COL]]}:" 0"
-    return; // expected-warning{{Cross-compartement calls that always succeed should return 0 instead}}
+    return; // expected-warning{{cross-compartement calls that always succeed should return 0 instead}}
   }
-} // expected-warning{{Cross-compartement calls that always succeed should return 0 instead}}
+} // expected-warning{{cross-compartement calls that always succeed should return 0 instead}}
 
 __attribute__((cheri_compartment("example"))) int int_return_type_f() {
   return 0;
