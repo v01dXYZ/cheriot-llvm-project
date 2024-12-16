@@ -44,7 +44,7 @@ namespace RISCVInsnOpcode {
 namespace RISCVABI {
 ABI computeTargetABI(const Triple &TT, const FeatureBitset &FeatureBits,
                      StringRef ABIName) {
-  auto TargetABI = getTargetABI(ABIName);
+  auto TargetABI = getTargetABI(ABIName, TT);
   bool IsRV64 = TT.isArch64Bit();
   bool IsRVE = FeatureBits[RISCV::FeatureRVE];
 
@@ -90,10 +90,15 @@ ABI computeTargetABI(const Triple &TT, const FeatureBitset &FeatureBits,
   auto ISAInfo = RISCVFeatures::parseFeatureBits(IsRV64, FeatureBits);
   if (!ISAInfo)
     report_fatal_error(ISAInfo.takeError());
-  return getTargetABI((*ISAInfo)->computeDefaultABI());
+  return getTargetABI((*ISAInfo)->computeDefaultABI(), TT);
 }
 
-ABI getTargetABI(StringRef ABIName) {
+ABI getTargetABI(StringRef ABIName, const Triple &TT) {
+  ABI Default = ABI_Unknown;
+  if (TT.getSubArch() == Triple::RISCV32SubArch_cheriot_v1) {
+    Default = (TT.getOS() == Triple::CheriotRTOS) ? ABI_CHERIOT : ABI_CHERIOT_BAREMETAL;
+  }
+
   auto TargetABI = StringSwitch<ABI>(ABIName)
                        .Case("ilp32", ABI_ILP32)
                        .Case("ilp32f", ABI_ILP32F)
@@ -112,7 +117,7 @@ ABI getTargetABI(StringRef ABIName) {
                        .Case("l64pc128d", ABI_L64PC128D)
                        .Case("cheriot", ABI_CHERIOT)
                        .Case("cheriot-baremetal", ABI_CHERIOT_BAREMETAL)
-                       .Default(ABI_Unknown);
+                       .Default(Default);
   return TargetABI;
 }
 

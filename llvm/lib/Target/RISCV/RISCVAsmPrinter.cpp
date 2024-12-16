@@ -332,7 +332,7 @@ void RISCVAsmPrinter::emitStartOfAsmFile(Module &M) {
       static_cast<RISCVTargetStreamer &>(*OutStreamer->getTargetStreamer());
   if (const MDString *ModuleTargetABI =
           dyn_cast_or_null<MDString>(M.getModuleFlag("target-abi")))
-    RTS.setTargetABI(RISCVABI::getTargetABI(ModuleTargetABI->getString()));
+    RTS.setTargetABI(RISCVABI::getTargetABI(ModuleTargetABI->getString(), TM.getTargetTriple()));
   if (TM.getTargetTriple().isOSBinFormatELF())
     emitAttributes();
 }

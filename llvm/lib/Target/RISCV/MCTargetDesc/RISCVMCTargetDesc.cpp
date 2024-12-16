@@ -53,7 +53,7 @@ static MCInstrInfo *createRISCVMCInstrInfo() {
 static MCRegisterInfo *
 createRISCVMCRegisterInfo(const Triple &TT, const MCTargetOptions &Options) {
   MCRegisterInfo *X = new MCRegisterInfo();
-  RISCVABI::ABI ABI = RISCVABI::getTargetABI(Options.getABIName());
+  RISCVABI::ABI ABI = RISCVABI::getTargetABI(Options.getABIName(), TT);
 
   MCRegister RAReg;
   if (ABI != RISCVABI::ABI_Unknown && RISCVABI::isCheriPureCapABI(ABI))
@@ -68,7 +68,7 @@ createRISCVMCRegisterInfo(const Triple &TT, const MCTargetOptions &Options) {
 static MCAsmInfo *createRISCVMCAsmInfo(const MCRegisterInfo &MRI,
                                        const Triple &TT,
                                        const MCTargetOptions &Options) {
-  RISCVABI::ABI ABI = RISCVABI::getTargetABI(Options.getABIName());
+  RISCVABI::ABI ABI = RISCVABI::getTargetABI(Options.getABIName(), TT);
   MCAsmInfo *MAI = new RISCVMCAsmInfo(TT, ABI);
 
   MCRegister SPReg;
