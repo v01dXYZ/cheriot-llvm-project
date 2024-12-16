@@ -7,44 +7,44 @@
 //===----------------------------------------------------------------------===//
 
 #include "RISCVCompressedCap.h"
-#include "llvm/CHERI/cheri-compressed-cap/cheri_compressed_cap.h"
+#include "MCTargetDesc/RISCVMCTargetDesc.h"
+#include "llvm/CHERI/CompressedCapability.h"
+#include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/Support/ErrorHandling.h"
 
 namespace llvm {
 
 namespace RISCVCompressedCap {
-uint64_t getRepresentableLength(uint64_t Length, bool IsRV64) {
-  if (IsRV64) {
-    return cc128_get_representable_length(Length);
-  } else {
-    return cc64_get_representable_length(Length);
-  }
+
+static constexpr CompressedCapability::CapabilityFormat
+GetCapabilitySize(const MCSubtargetInfo &STI) {
+  if (STI.getCPU() == "cheriot")
+    return CompressedCapability::Cheriot64;
+
+  bool IsRV64 = STI.hasFeature(RISCV::Feature64Bit);
+  return IsRV64 ? CompressedCapability::Cheri128
+                : CompressedCapability::Cheri64;
 }
 
-uint64_t getAlignmentMask(uint64_t Length, bool IsRV64) {
-  if (IsRV64) {
-    return cc128_get_alignment_mask(Length);
-  } else {
-    return cc64_get_alignment_mask(Length);
-  }
+uint64_t getRepresentableLength(uint64_t Length, const MCSubtargetInfo &STI) {
+
+  return CompressedCapability::GetRepresentableLength(Length,
+                                                      GetCapabilitySize(STI));
 }
 
-TailPaddingAmount getRequiredTailPadding(uint64_t Size, bool IsRV64) {
-  if (IsRV64) {
-    return static_cast<TailPaddingAmount>(
-        llvm::alignTo(Size, cc128_get_required_alignment(Size)) - Size);
-  } else {
-    return static_cast<TailPaddingAmount>(
-        llvm::alignTo(Size, cc64_get_required_alignment(Size)) - Size);
-  }
+uint64_t getAlignmentMask(uint64_t Length, const MCSubtargetInfo &STI) {
+  return CompressedCapability::GetAlignmentMask(Length, GetCapabilitySize(STI));
 }
 
-Align getRequiredAlignment(uint64_t Size, bool IsRV64) {
-  if (IsRV64) {
-    return Align(cc128_get_required_alignment(Size));
-  } else {
-    return Align(cc64_get_required_alignment(Size));
-  }
+TailPaddingAmount getRequiredTailPadding(uint64_t Size,
+                                         const MCSubtargetInfo &STI) {
+  return CompressedCapability::GetRequiredTailPadding(Size,
+                                                      GetCapabilitySize(STI));
+}
+
+Align getRequiredAlignment(uint64_t Size, const MCSubtargetInfo &STI) {
+  return CompressedCapability::GetRequiredAlignment(Size,
+                                                    GetCapabilitySize(STI));
 }
 } // namespace RISCVCompressedCap
 } // namespace llvm

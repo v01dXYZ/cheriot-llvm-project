@@ -13967,9 +13967,9 @@ void RISCVTargetLowering::computeKnownBitsForTargetNode(const SDValue Op,
       uint64_t MinLength = KnownLengthBits.One.getZExtValue();
       uint64_t MaxLength = (~KnownLengthBits.Zero).getZExtValue();
       uint64_t MinRoundedLength =
-          RISCVCompressedCap::getRepresentableLength(MinLength, IsRV64);
+          RISCVCompressedCap::getRepresentableLength(MinLength, Subtarget);
       uint64_t MaxRoundedLength =
-          RISCVCompressedCap::getRepresentableLength(MaxLength, IsRV64);
+          RISCVCompressedCap::getRepresentableLength(MaxLength, Subtarget);
       bool MinRoundedOverflow = MinRoundedLength < MinLength;
       bool MaxRoundedOverflow = MaxRoundedLength < MaxLength;
 
@@ -14024,8 +14024,8 @@ void RISCVTargetLowering::computeKnownBitsForTargetNode(const SDValue Op,
       uint64_t MinLength = KnownLengthBits.One.getZExtValue();
       uint64_t MaxLength = (~KnownLengthBits.Zero).getZExtValue();
 
-      Known.Zero |= ~RISCVCompressedCap::getAlignmentMask(MinLength, IsRV64);
-      Known.One |= RISCVCompressedCap::getAlignmentMask(MaxLength, IsRV64);
+      Known.Zero |= ~RISCVCompressedCap::getAlignmentMask(MinLength, Subtarget);
+      Known.One |= RISCVCompressedCap::getAlignmentMask(MaxLength, Subtarget);
       break;
     }
     case Intrinsic::riscv_vsetvli:
@@ -14131,7 +14131,7 @@ RISCVTargetLowering::getTailPaddingForPreciseBounds(uint64_t Size) const {
   if (!RISCVABI::isCheriPureCapABI(Subtarget.getTargetABI()))
     return TailPaddingAmount::None;
 
-  return RISCVCompressedCap::getRequiredTailPadding(Size, Subtarget.is64Bit());
+  return RISCVCompressedCap::getRequiredTailPadding(Size, Subtarget);
 }
 
 Align
@@ -14139,7 +14139,7 @@ RISCVTargetLowering::getAlignmentForPreciseBounds(uint64_t Size) const {
   if (!RISCVABI::isCheriPureCapABI(Subtarget.getTargetABI()))
     return Align();
 
-  return RISCVCompressedCap::getRequiredAlignment(Size, Subtarget.is64Bit());
+  return RISCVCompressedCap::getRequiredAlignment(Size, Subtarget);
 }
 
 const Constant *

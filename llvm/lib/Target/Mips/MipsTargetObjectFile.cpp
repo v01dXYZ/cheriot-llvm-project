@@ -7,11 +7,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "MipsTargetObjectFile.h"
+#include "MCTargetDesc/MipsMCExpr.h"
 #include "MipsSubtarget.h"
 #include "MipsTargetMachine.h"
-#include "MCTargetDesc/MipsMCExpr.h"
 #include "llvm/BinaryFormat/ELF.h"
-#include "llvm/CHERI/cheri-compressed-cap/cheri_compressed_cap.h"
+#include "llvm/CHERI/CompressedCapability.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/GlobalVariable.h"
@@ -205,7 +205,9 @@ MipsTargetObjectFile::getTailPaddingForPreciseBounds(
     return TailPaddingAmount::None;
   if (Subtarget.isCheri128()) {
     return static_cast<TailPaddingAmount>(
-        llvm::alignTo(Size, cc128_get_required_alignment(Size)) - Size);
+        llvm::alignTo(Size, CompressedCapability::GetRequiredAlignment(
+                                Size, CompressedCapability::Cheri128)) -
+        Size);
   }
   assert(Subtarget.isCheri256());
   // No padding required for CHERI256
@@ -220,7 +222,8 @@ MipsTargetObjectFile::getAlignmentForPreciseBounds(
   if (!Subtarget.isCheri())
     return Align();
   if (Subtarget.isCheri128()) {
-    return Align(cc128_get_required_alignment(Size));
+    return Align(CompressedCapability::GetRequiredAlignment(
+        Size, CompressedCapability::Cheri128));
   }
   assert(Subtarget.isCheri256());
   // No alignment required for CHERI256
