@@ -113,7 +113,7 @@ static std::string computeDataLayout(const Triple &TT, StringRef FS,
     else
       CapTypes = "-pf200:64:64:64:32";
 
-    RISCVABI::ABI ABI = RISCVABI::getTargetABI(Options.MCOptions.getABIName());
+    RISCVABI::ABI ABI = RISCVABI::getTargetABI(Options.MCOptions.getABIName(), TT);
     if (ABI != RISCVABI::ABI_Unknown && RISCVABI::isCheriPureCapABI(ABI))
       PurecapOptions = "-A200-P200-G200";
   }
@@ -225,7 +225,7 @@ RISCVTargetMachine::getSubtargetImpl(const Function &F) const {
     auto ABIName = Options.MCOptions.getABIName();
     if (const MDString *ModuleTargetABI = dyn_cast_or_null<MDString>(
             F.getParent()->getModuleFlag("target-abi"))) {
-      auto TargetABI = RISCVABI::getTargetABI(ABIName);
+      auto TargetABI = RISCVABI::getTargetABI(ABIName, TargetTriple);
       if (TargetABI != RISCVABI::ABI_Unknown &&
           ModuleTargetABI->getString() != ABIName) {
         report_fatal_error("-target-abi option != target-abi module flag");
