@@ -171,6 +171,7 @@ declare i8 addrspace(200)* @llvm.cheri.cap.offset.set.i64(i8 addrspace(200)*, i6
 declare i8 addrspace(200)* @llvm.cheri.cap.address.set.i64(i8 addrspace(200)*, i64)
 declare i8 addrspace(200)* @llvm.cheri.cap.bounds.set.i64(i8 addrspace(200)*, i64)
 declare i8 addrspace(200)* @llvm.cheri.cap.bounds.set.exact.i64(i8 addrspace(200)*, i64)
+declare i8 addrspace(200)* @llvm.cheri.cap.bounds.set.round.down.i64(i8 addrspace(200)*, i64)
 declare i8 addrspace(200)* @llvm.cheri.cap.high.set.i64(i8 addrspace(200)*, i64)
 declare i8 addrspace(200)* @llvm.cheri.cap.tag.clear(i8 addrspace(200)*)
 declare i8 addrspace(200)* @llvm.cheri.cap.build(i8 addrspace(200)*, i8 addrspace(200)*)
@@ -273,6 +274,20 @@ define i8 addrspace(200)* @bounds_set(i8 addrspace(200)* %cap, i64 %bounds) noun
 ; HYBRID-NEXT:    csetbounds ca0, ca0, a1
 ; HYBRID-NEXT:    ret
   %newcap = call i8 addrspace(200)* @llvm.cheri.cap.bounds.set.i64(i8 addrspace(200)* %cap, i64 %bounds)
+  ret i8 addrspace(200)* %newcap
+}
+
+define i8 addrspace(200)* @bounds_set_rounds_down(i8 addrspace(200)* %cap, i64 %bounds) nounwind {
+; PURECAP-LABEL: bounds_set_rounds_down:
+; PURECAP:       # %bb.0:
+; PURECAP-NEXT:    csetboundsrounddown ca0, ca0, a1
+; PURECAP-NEXT:    cret
+;
+; HYBRID-LABEL: bounds_set_rounds_down:
+; HYBRID:       # %bb.0:
+; HYBRID-NEXT:    csetboundsrounddown ca0, ca0, a1
+; HYBRID-NEXT:    ret
+  %newcap = call i8 addrspace(200)* @llvm.cheri.cap.bounds.set.round.down.i64(i8 addrspace(200)* %cap, i64 %bounds)
   ret i8 addrspace(200)* %newcap
 }
 

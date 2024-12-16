@@ -82,6 +82,9 @@ csetbounds c1, c2, 0xbd5
 # CHECK-INST: csetbounds cra, csp, 3029
 # CHECK: encoding: [0xdb,0x20,0x51,0xbd]
 csetboundsimm c1, c2, 0xbd5
+# CHECK-INST: csetboundsrounddown cra, csp, gp
+# CHECK: encoding: [0xdb,0x00,0x31,0x14]
+csetboundsrounddown c1, c2, x3
 # CHECK-INST: ccleartag cra, csp
 # CHECK: encoding: [0xdb,0x00,0xb1,0xfe]
 ccleartag c1, c2
