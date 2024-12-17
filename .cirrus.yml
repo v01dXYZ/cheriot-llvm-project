@@ -19,7 +19,7 @@ pr_task:
     - cmake ../llvm -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;lld" -DLLVM_ENABLE_UNWIND_TABLES=NO -DLLVM_ENABLE_LLD=ON -DLLVM_PARALLEL_LINK_JOBS=1 -G Ninja
   build_script:
     - cd Build
-    - ninja
+    - time ninja
   test_script:
     - cd Build
     # Filter out 27 tests that fail in CI.
@@ -32,6 +32,7 @@ x86_release_task:
   name: Build and upload artefact x86_64
   only_if: ($CIRRUS_PR == "") && ($CIRRUS_BRANCH == "cheriot")
   timeout_in: 120m
+  trigger_type: manual
   container:
     image: ubuntu:24.04
     cpu: 8
@@ -67,6 +68,7 @@ arm_release_task:
   name: Build and upload artefact aarch64
   only_if: ($CIRRUS_PR == "") && ($CIRRUS_BRANCH == "cheriot")
   timeout_in: 120m
+  trigger_type: manual
   arm_container:
     image: ubuntu:24.04
     cpu: 8
