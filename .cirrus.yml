@@ -22,13 +22,14 @@ pr_task:
     - export CCACHE_REMOTE_STORAGE="http://${CIRRUS_HTTP_CACHE_HOST}/${CIRRUS_OS}/"
     - export CCACHE_REMOTE_ONLY=1
     - echo $CCACHE_REMOTE_STORAGE
-    - time ninja -v
+    - time ninja -v test-depends
   test_script:
     - cd Build
     # Filter out 27 tests that fail in CI.
     #  - The scan-build and update_cc_test_checks tests fail because of a missing Perl dependency.
     #  - The llvm-ar test fails because CI runs as root and can override the permissions.
     #  - The llvm-dwarfdump and llvm-ifs tests fails with a permission error.
+    - ./bin/llvm-lit -v ../llvm/test/Unit ../clang/test/Unit
     - ./bin/llvm-lit  -v --filter-out '(LibClang/symbols\.test)|(.*/scan-build/.*)|(.*/update_cc_test_checks/.*)|(tools/llvm-ar/error-opening-permission.test)|(tools/llvm-dwarfdump/X86/output.s)|(tools/llvm-ifs/fail-file-write.test)' ../llvm/test/ ../clang/test/ 
 
 x86_release_task:
